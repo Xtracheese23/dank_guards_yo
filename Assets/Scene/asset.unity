@@ -255,10 +255,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   point: {fileID: 0}
-  ai: {fileID: 1937396304084776, guid: 8a7a8e926c82c4a4ca0008582ce908c2, type: 2}
+  ai: {fileID: 1480554757819584, guid: d992ee0f7d4695648b4732a4c066c863, type: 2}
   camera: {fileID: 1665364587}
-  useSaved: 1
-  problem: problem_E.json
+  useSaved: 0
+  problem: problem_A.json
 --- !u!4 &946960906
 Transform:
   m_ObjectHideFlags: 0

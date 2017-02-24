@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class GuardPoint : Point {
+public class StaticGuard : Point {
     //private float time = 0.0F;
 
     private Vector2[] points;

@@ -31,6 +31,7 @@ public class GameManager : MonoBehaviour {
         point = point ? point : player.GetComponent<DDrive>();
         point = point ? point : player.GetComponent<DynamicPoint>();
         point = point ? point : player.GetComponent<KinematicPoint>();
+        point = point ? point : player.GetComponent<StaticGuard>();
         return point;
     }
 

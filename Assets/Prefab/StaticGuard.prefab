@@ -20,7 +20,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4845870008944284}
   - component: {fileID: 212233931467930408}
-  - component: {fileID: 114875066352963278}
+  - component: {fileID: 114344129741702006}
   m_Layer: 0
   m_Name: StaticGuard
   m_TagString: Player
@@ -41,7 +41,7 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &114875066352963278
+--- !u!114 &114344129741702006
 MonoBehaviour:
   m_ObjectHideFlags: 1
   m_PrefabParentObject: {fileID: 0}
@@ -49,19 +49,19 @@ MonoBehaviour:
   m_GameObject: {fileID: 1480554757819584}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1a9f959b5418d3949b17a6ea3e0f6ed5, type: 3}
+  m_Script: {fileID: 11500000, guid: 8d36e4e11397a784b8d0ad6818c861b6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   startPos: []
   goalPos: []
   startVel: []
   goalVel: []
-  MAX_SPEED: 0
-  MAX_ACCEL: 0
-  MAX_OMEGA: 0
-  MAX_PHI: 0
-  L_CAR: 0
-  K_FRICTION: 0
+  MAX_SPEED: 2
+  MAX_ACCEL: 2
+  MAX_OMEGA: 2
+  MAX_PHI: 2
+  L_CAR: 2
+  K_FRICTION: 2
   boundaryPolygon: []
   useSaved: 0
   curPos: 0
