@@ -9,53 +9,51 @@ Prefab:
     m_Modifications: []
     m_RemovedComponents: []
   m_ParentPrefab: {fileID: 0}
-  m_RootGameObject: {fileID: 1937396304084776}
+  m_RootGameObject: {fileID: 1480554757819584}
   m_IsPrefabParent: 1
---- !u!1 &1937396304084776
+--- !u!1 &1480554757819584
 GameObject:
   m_ObjectHideFlags: 0
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 100100000}
   serializedVersion: 5
   m_Component:
-  - component: {fileID: 4165742760088852}
-  - component: {fileID: 114824462996828166}
-  - component: {fileID: 212804517892499540}
+  - component: {fileID: 4845870008944284}
+  - component: {fileID: 212233931467930408}
+  - component: {fileID: 114875066352963278}
   m_Layer: 0
-  m_Name: DD
+  m_Name: StaticGuard
   m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &4165742760088852
+--- !u!4 &4845870008944284
 Transform:
   m_ObjectHideFlags: 1
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 100100000}
-  m_GameObject: {fileID: 1937396304084776}
+  m_GameObject: {fileID: 1480554757819584}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 1}
-  m_LocalScale: {x: 0.3, y: 0.3, z: 1}
+  m_LocalScale: {x: 3.1865768, y: 2.6277244, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &114824462996828166
+--- !u!114 &114875066352963278
 MonoBehaviour:
   m_ObjectHideFlags: 1
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 100100000}
-  m_GameObject: {fileID: 1937396304084776}
+  m_GameObject: {fileID: 1480554757819584}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: aabb64d07ec1f6046a25e76173d5c368, type: 3}
+  m_Script: {fileID: 11500000, guid: 1a9f959b5418d3949b17a6ea3e0f6ed5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   startPos: []
-  goalPos:
-  - 0
-  - 0
+  goalPos: []
   startVel: []
   goalVel: []
   MAX_SPEED: 0
@@ -67,16 +65,12 @@ MonoBehaviour:
   boundaryPolygon: []
   useSaved: 0
   curPos: 0
-  startTheta: 0
-  goalTheta: 0
-  task: 1
-  iter: 200
---- !u!212 &212804517892499540
+--- !u!212 &212233931467930408
 SpriteRenderer:
   m_ObjectHideFlags: 1
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 100100000}
-  m_GameObject: {fileID: 1937396304084776}
+  m_GameObject: {fileID: 1480554757819584}
   m_Enabled: 1
   m_CastShadows: 0
   m_ReceiveShadows: 0
@@ -102,7 +96,7 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 0
   m_SortingOrder: 0
-  m_Sprite: {fileID: 21300000, guid: aa9282e7aca78304999e2279d6946cb7, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 3eb00dbd62c977441a3308d28a28a961, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0

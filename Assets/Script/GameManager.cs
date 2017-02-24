@@ -57,7 +57,7 @@ public class GameManager : MonoBehaviour {
 
         point.useSaved = useSaved;
 
-        point.startPos = input.start_pos;
+        point.startPos = input.start_pos; //need to update for multiple
         point.goalPos = input.goal_pos;
         point.startVel = input.start_vel;
         point.goalVel = input.goal_vel;
