@@ -19,6 +19,20 @@ class Utils
         }
     }
 
+    public struct Set
+    {
+        public List<int> set;
+        public int score;
+        public Vector2 center; 
+
+        public Set(List<int> s, int si,Vector2 c)
+        {
+            this.set = s;
+            this.score = si;
+            this.center = c;
+        }
+    }
+
     public static List<int> bf(int N, int s, int t, List<Edge> edges)
     {
         List<int> ans = new List<int>();
@@ -97,6 +111,126 @@ class Utils
         }
 
         return doIntersect;
+    }
+
+    //returns indexes of visible points from interestPoints. This corresponds to a subset of all the interestPoints.
+    public static Set pointsInSight(Vector2 c, float r,Vector2[] interestPoints,Vector2[][] polygons)
+    {
+        List<int> visiblePoints = new List<int>();
+        int l = 0;
+        for (int i = 0; i < interestPoints.Length; i++)
+        {
+            float dist = Vector2.Distance(c, interestPoints[i]);
+            if (dist > r) continue;
+
+            bool intersect = false;
+            foreach (var polygon in polygons)
+            {
+                for (int k = 0; k < polygon.Length; k++)
+                {
+                    Vector2 p3 = polygon[k], p4 = polygon[(k + 1) % polygon.Length];
+                    intersect = intersect || Utils.FasterLineSegmentIntersection(c, interestPoints[i], p3, p4);
+                }
+            }
+            if (!intersect)
+            {
+                visiblePoints.Add(i);
+                l++;
+                Debug.Log("(" + c[0] + ", " + c[1] + "),Can see (" + interestPoints[i][0] + "," + interestPoints[i][1] + "), d = " + dist);
+            }
+        }
+        return new Set(visiblePoints, l,c);
+    }
+
+    // Use Greedy algorithm to find N best subsets to cover the interestPoints. Needs to be improved to run multiple Greedies in parallel.
+    // I wanna test this first but I'm not sure how.
+    public static int[] findBestSetsUsingGreedy(List<Set> subsets,int N)
+    {
+        int[] bestIndex = new int[N];
+        int[] bestScore = new int[N];
+        Set s,bestS;
+        for (int n=0;n<N; n++)
+        {
+            for (int i = 0; i < subsets.Count; i++)
+            {
+                s = subsets[i];
+                if (s.score > bestScore[n])
+                {
+                    bestIndex[n] = i;
+                    bestScore[n] = s.score;
+                }
+            }
+
+            bestS = subsets[bestIndex[n]];
+            subsets.RemoveAt(bestIndex[n]);
+            for (int i = 0; i < subsets.Count; i++)
+            {
+                s = subsets[i];
+                foreach(int j in s.set)
+                    if (bestS.set.Contains(j)) s.score--;
+            }
+            Debug.Log("Score: " +bestScore+ "Center: (" + bestS.center[0]+","+ bestS.center[1]+")");
+        }
+        return bestIndex;
+    }
+
+
+    // Useless for now (Can be modified to calulate intersection point between an obstacle and a circle later if needed)
+    public static bool LineSegmentCircleIntersection(Vector2 p1, Vector2 p2, Vector2 center, float r)
+    {
+        Vector2 d = p2 - p1;
+        Vector2 f = p1 - center;
+
+        float a = Vector2.Dot(d,d);
+        float b = 2 * Vector2.Dot(f,d);
+        float c = Vector2.Dot(f,f) - r * r;
+        float discriminant = b * b - 4 * a * c;
+        if (discriminant < 0)
+        {
+            // no intersection
+            return false;
+        }
+        else
+        {
+            // ray didn't totally miss sphere,
+            // so there is a solution to
+            // the equation.
+
+            discriminant = (float)System.Math.Sqrt(discriminant);
+
+            // either solution may be on or off the ray so need to test both
+            // t1 is always the smaller value, because BOTH discriminant and
+            // a are nonnegative.
+            float t1 = (-b - discriminant) / (2 * a);
+            float t2 = (-b + discriminant) / (2 * a);
+
+            // 3x HIT cases:
+            //          -o->             --|-->  |            |  --|->
+            // Impale(t1 hit,t2 hit), Poke(t1 hit,t2>1), ExitWound(t1<0, t2 hit), 
+
+            // 3x MISS cases:
+            //       ->  o                     o ->              | -> |
+            // FallShort (t1>1,t2>1), Past (t1<0,t2<0), CompletelyInside(t1<0, t2>1)
+
+            if (t1 >= 0 && t1 <= 1)
+            {
+                // t1 is the intersection, and it's closer than t2
+                // (since t1 uses -b - discriminant)
+                // Impale, Poke
+                return true;
+            }
+
+            // here t1 didn't intersect so we are either started
+            // inside the sphere or completely past it
+            if (t2 >= 0 && t2 <= 1)
+            {
+                // ExitWound
+                return true;
+            }
+
+            // no intn: FallShort, Past, CompletelyInside
+            return false;
+        }
     }
 
     /*static bool ContainsPoint(Vector2[] polyPoints, Vector2 p)
