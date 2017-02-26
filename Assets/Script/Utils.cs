@@ -136,10 +136,28 @@ class Utils
             {
                 visiblePoints.Add(i);
                 l++;
-                Debug.Log("(" + c[0] + ", " + c[1] + "),Can see (" + interestPoints[i][0] + "," + interestPoints[i][1] + "), d = " + dist);
+                //Debug.Log("(" + c[0] + ", " + c[1] + "),Can see (" + interestPoints[i][0] + "," + interestPoints[i][1] + "), d = " + dist);
             }
         }
         return new Set(visiblePoints, l,c);
+    }
+
+    //returns indexes of visible points from interestPoints. This corresponds to a subset of all the interestPoints.
+    public static Set pointsInSight(Vector2 c, float r, Vector2[] interestPoints)
+    {
+        List<int> visiblePoints = new List<int>();
+        int l = 0;
+        for (int i = 0; i < interestPoints.Length; i++)
+        {
+            float dist = Vector2.Distance(c, interestPoints[i]);
+            if (dist > r) continue;
+            visiblePoints.Add(i);
+            l++;
+            //Debug.Log("(" + c[0] + ", " + c[1] + "),Can see (" + interestPoints[i][0] + "," + interestPoints[i][1] + "), d = " + dist);
+        }
+        Set set = new Set(visiblePoints, l, c);
+        //Debug.Log("(" + c[0] + ", " + c[1] + "),score "+set.score);
+        return set;
     }
 
     // Use Greedy algorithm to find N best subsets to cover the interestPoints. Needs to be improved to run multiple Greedies in parallel.
@@ -148,7 +166,8 @@ class Utils
     {
         int[] bestIndex = new int[N];
         int[] bestScore = new int[N];
-        Set s,bestS;
+        Set s, bestS, tempS;
+        List<Set> tempSubsets;
         for (int n=0;n<N; n++)
         {
             for (int i = 0; i < subsets.Count; i++)
@@ -166,11 +185,28 @@ class Utils
             for (int i = 0; i < subsets.Count; i++)
             {
                 s = subsets[i];
-                foreach(int j in s.set)
-                    if (bestS.set.Contains(j)) s.score--;
+                tempS = s;
+                Debug.Log("center"+s.center[0]+","+s.center[1]);
+                List<int> elementsToRemove = new List<int>();
+                foreach (int j in s.set)
+                {
+                    Debug.Log(j);
+                    if (bestS.set.Contains(j))
+                    {
+                        //tempS.set.Remove(j);
+                        elementsToRemove.Add(j);
+                        tempS.score--;
+                    }
+                }
+                foreach (int j in elementsToRemove)
+                {
+                    tempS.set.Remove(j);
+                }
+                subsets[i] = tempS;
             }
-            Debug.Log("Score: " +bestScore+ "Center: (" + bestS.center[0]+","+ bestS.center[1]+")");
+            Debug.Log("Score: " +bestScore[n]+ "Center: (" + bestS.center[0]+","+ bestS.center[1]+")");
         }
+        Debug.Log("Total covered:" + bestScore.Sum());
         return bestIndex;
     }
 
