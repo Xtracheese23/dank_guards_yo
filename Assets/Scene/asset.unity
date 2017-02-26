@@ -255,7 +255,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   point: {fileID: 0}
+  point2: {fileID: 0}
+  map: {fileID: 0}
   ai: {fileID: 1480554757819584, guid: d992ee0f7d4695648b4732a4c066c863, type: 2}
+  mapai: {fileID: 1785505170316712, guid: 9b95125bb66c93440b0534a204ed21fe, type: 2}
   camera: {fileID: 1665364587}
   useSaved: 0
   problem: problem_A.json

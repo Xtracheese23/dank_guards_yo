@@ -15,4 +15,5 @@ public class Point : MonoBehaviour
 
     public List<Node> path;
     public int curPos = 0;
+    public int guardID;
 }
