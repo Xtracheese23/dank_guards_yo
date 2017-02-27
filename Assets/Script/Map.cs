@@ -11,6 +11,7 @@ public class Map : MonoBehaviour
 
     public Vector2[][] polygons;
     public Vector2[] boundaryPolygon;
+    public float[][] items;
     //public bool useSaved; // hack
 
     //public List<Node> path;

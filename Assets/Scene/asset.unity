@@ -261,7 +261,7 @@ MonoBehaviour:
   mapai: {fileID: 1785505170316712, guid: 9b95125bb66c93440b0534a204ed21fe, type: 2}
   camera: {fileID: 1665364587}
   useSaved: 0
-  problem: problem_A.json
+  problem: problem_A12.json
 --- !u!4 &946960906
 Transform:
   m_ObjectHideFlags: 0
