@@ -33,6 +33,39 @@ class Utils
         }
     }
 
+    public struct GreedyNode
+    {
+        public Set set;
+        public int nbCandidates;
+        public int depth;
+        public GreedyNode[] bestCandidates;
+
+        public GreedyNode(Set s, int N,int d)
+        {
+            this.set = s;
+            this.nbCandidates = 0;
+            this.bestCandidates = new GreedyNode[N];
+            this.depth=d;
+        }
+
+        public void addCandidate(GreedyNode gn)
+        {
+            this.bestCandidates[nbCandidates] = gn;
+            this.nbCandidates++;
+        }
+    }
+
+    public struct GreedyTree
+    {
+        public GreedyNode root;
+
+        public GreedyTree(GreedyNode root)
+        {
+            this.root = root;
+        }
+
+    }
+
     public static List<int> bf(int N, int s, int t, List<Edge> edges)
     {
         List<int> ans = new List<int>();
@@ -160,6 +193,8 @@ class Utils
         return set;
     }
 
+
+
     // Use Greedy algorithm to find N best subsets to cover the interestPoints. Needs to be improved to run multiple Greedies in parallel.
     // I wanna test this first but I'm not sure how.
     public static int[] findBestSetsUsingGreedy(List<Set> subsets,int N)
@@ -167,7 +202,6 @@ class Utils
         int[] bestIndex = new int[N];
         int[] bestScore = new int[N];
         Set s, bestS, tempS;
-        List<Set> tempSubsets;
         for (int n=0;n<N; n++)
         {
             for (int i = 0; i < subsets.Count; i++)
@@ -206,8 +240,84 @@ class Utils
             }
             Debug.Log("Score: " +bestScore[n]+ "Center: (" + bestS.center[0]+","+ bestS.center[1]+")");
         }
-        Debug.Log("Total covered:" + bestScore.Sum());
+        Debug.Log("Total covered:" + bestScore.Sum()/subsets.Count);
         return bestIndex;
+        
+    }
+
+    public static float[][] getStartPositions(float[][] items, int numberofGuards,Map map)
+    {
+        float r = 5;
+        float[][] start_positions = new float[numberofGuards][];
+        Vector2[] interestPoints = new Vector2[items.Length];
+        List<Set> subsets = new List<Set>();
+        for(int i=0;i<items.Length;i++)
+        {
+            interestPoints[i] = new Vector2(items[i][0], items[i][1]);
+        }
+        foreach(var c in interestPoints)
+        {
+            Set s = pointsInSight(c, r, interestPoints, map.polygons);
+            subsets.Add(s);
+        }
+        int[] bestIndexes = findBestSetsUsingGreedy(subsets, numberofGuards);
+
+        for(int i = 0; i < numberofGuards; i++)
+        {
+            start_positions[i] = new float[] { subsets[bestIndexes[i]].center[0], subsets[bestIndexes[i]].center[1] };
+        }
+        return start_positions;
+    }
+
+    public static Set[] findNBestSetsUsingGreedy2(List<Set> subsets, int N)
+    {
+        Set[] bestSubsets = new Set[N];
+        int[] bestScore = new int[N];
+        Set s;
+        for (int i = 0; i < subsets.Count; i++)
+        {
+            s = subsets[i];
+            for(int j = 0; j < bestSubsets.Length; j++)
+            {
+                if (s.score > bestScore[j])
+                {
+                    bestSubsets[j] = s;
+                    bestScore[j] = s.score;
+                }
+            }
+        }
+        return bestSubsets;
+    }
+
+    public static GreedyTree findBestSetsUsingImprovedGreedy(List<Set> subsets, int N,int Ncandidates)
+    {
+        GreedyNode start = new GreedyNode(new Set(),Ncandidates,0);
+        GreedyTree gt = new GreedyTree(start);
+        GreedyNode parent;
+        parent = start;
+        improvedGreedyReccursive(subsets, start, 0, N, Ncandidates);
+        return gt;
+    }
+
+    public static void improvedGreedyReccursive(List<Set> subsets, GreedyNode parent,int depth,int maxDepth,int Ncandidates)
+    {
+        if (parent.depth == maxDepth)
+        {
+            return;
+        }
+        List<Set> tempSubsets = subsets;
+        GreedyNode child;
+        Set[] s = findNBestSetsUsingGreedy2(tempSubsets, Ncandidates);
+        for (int j = 0; j < Ncandidates; j++)
+        {
+            tempSubsets = subsets;
+            child = new GreedyNode(s[j], Ncandidates, depth+1);
+            parent.addCandidate(child);
+            tempSubsets.Remove(s[j]);
+            improvedGreedyReccursive(tempSubsets, child, depth, maxDepth, Ncandidates);
+        }
+
+        return;
     }
 
 

@@ -22,8 +22,10 @@ public class GameManager : MonoBehaviour {
         {
             if (point[i])
             {
-                Gizmos.color = Color.red;
-                Gizmos.DrawCube(new Vector3(point[i].startPos[0], point[i].startPos[1], 2), new Vector3(0.5F, 0.5F, 0));
+                //Gizmos.color = Color.red;
+                //Gizmos.DrawCube(new Vector3(point[i].startPos[0], point[i].startPos[1], 2), new Vector3(0.5F, 0.5F, 0));
+                Gizmos.color = new Color(1, 0, 0, (float)0.5);
+                Gizmos.DrawSphere(new Vector3(point[i].startPos[0], point[i].startPos[1], 2), 5);
                 Gizmos.color = Color.blue;
                 Gizmos.DrawCube(new Vector3(point[i].goalPos[0], point[i].goalPos[1], 2), new Vector3(0.5F, 0.5F, 0));
             }
@@ -212,6 +214,9 @@ public class GameManager : MonoBehaviour {
             }
         }
         map.items = items;
+
+        //calculate new positions
+        start_positions = Utils.getStartPositions(items, numberofGuards, map);
 
         //Create players
 
