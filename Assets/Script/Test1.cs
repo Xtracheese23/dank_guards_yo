@@ -11,7 +11,7 @@ public class Test1 : MonoBehaviour
     void test()
     {
         Vector2[] interestPoints = new Vector2[25];
-        List <Utils.Set> sets = new List<Utils.Set>();
+        List <Set> sets = new List<Set>();
         int j = 0;
         for(int i=0;i<interestPoints.Length;i++)
         {
@@ -25,13 +25,13 @@ public class Test1 : MonoBehaviour
             sets.Add(Utils.pointsInSight(interestPoints[i], (float)1.5, interestPoints));
             //Debug.Log("("+interestPoints[i][0]+","+ interestPoints[i][1]+") Score=" + sets[i].score);
         }
-        int[] bestSets = Utils.findBestSetsUsingGreedy(sets, 3);
+        Set[] bestSets = Utils.findBestSetsUsingGreedy(sets, 3);
     }
 
     void test2()
     {
         Vector2[] interestPoints = new Vector2[25];
-        List<Utils.Set> sets = new List<Utils.Set>();
+        List<Set> sets = new List<Set>();
         int j = 0;
         for (int i = 0; i < interestPoints.Length; i++)
         {
@@ -45,7 +45,28 @@ public class Test1 : MonoBehaviour
             sets.Add(Utils.pointsInSight(interestPoints[i], (float)1.5, interestPoints));
             //Debug.Log("("+interestPoints[i][0]+","+ interestPoints[i][1]+") Score=" + sets[i].score);
         }
-        int[] bestSets = Utils.findBestSetsUsingGreedy(sets, 3);
+        Set[] bestSets = Utils.findBestSetsUsingGreedy(sets, 3);
+    }
+
+
+    void testWeights()
+    {
+        Vector2[] interestPoints = new Vector2[25];
+        List<Set> sets = new List<Set>();
+        int j = 0;
+        for (int i = 0; i < interestPoints.Length; i++)
+        {
+            interestPoints[i] = new Vector2(i % 5, j);
+            if (i % 5 == 4)
+                j++;
+        }
+
+        for (int i = 0; i < interestPoints.Length; i++)
+        {
+            sets.Add(Utils.pointsInSight(interestPoints[i], (float)1.5, interestPoints));
+            //Debug.Log("("+interestPoints[i][0]+","+ interestPoints[i][1]+") Score=" + sets[i].score);
+        }
+        Set[] bestSets = Utils.findBestSetsUsingGreedy(sets, 3);
     }
 
 

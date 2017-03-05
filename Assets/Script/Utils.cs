@@ -4,6 +4,75 @@ using System.Runtime.CompilerServices;
 using Newtonsoft.Json;
 using UnityEngine;
 
+public class Set : MonoBehaviour
+{
+    public List<int> set;
+    public int score;
+    public Vector2 center;
+    public float time;
+    public int closestGuard;
+
+    public Set(List<int> s, int si, Vector2 c)
+    {
+        this.set = s;
+        this.score = si;
+        this.center = c;
+        this.time = 100;
+        this.closestGuard = -1;
+    }
+
+    //Returns the shortest time to get to the enter of the set s and the id of which guard would go there
+    public float[] updateSetScores(Waypoint[] waypoints)
+    {
+        float[] score = new float[2];
+        score[1] = Mathf.Infinity;
+        for (int i = 0; i < waypoints.Length; i++)
+        {
+            Waypoint w = waypoints[i];
+            if ((w.time + Vector2.Distance(w.point, this.center)) < score[1])
+            {
+                score[0] = i;
+                score[1] = (w.time + Vector2.Distance(w.point, this.center));
+                //Debug.Log(score[1]);
+            }
+        }
+        this.closestGuard = (int)score[0];
+        this.time = score[1];
+        return score;
+    }
+}
+
+public struct Waypoint
+{
+    public Vector2 point;
+    public float time;
+    public List<int> set;
+
+    public Waypoint(Vector2 p, float t,List<int> s)
+    {
+        this.point = p;
+        this.time = t;
+        this.set = s;
+    }
+
+    public void print()
+    {
+        Debug.Log("Point: ("+point[0]+","+point[1]+"), time: "+time+", can see "+set.Count);
+    }
+}
+
+public struct Datastruct
+{
+    public List<Set> sets;
+    public List<Waypoint>[] waypoints;
+
+    public Datastruct(List<Waypoint>[] w, List<Set> s)
+    {
+        this.waypoints = w;
+        this.sets = s;
+    }
+}
+
 class Utils
 {
     public struct Edge
@@ -16,20 +85,6 @@ class Utils
             this.from = f;
             this.to = t;
             this.dist = d;
-        }
-    }
-
-    public struct Set
-    {
-        public List<int> set;
-        public int score;
-        public Vector2 center; 
-
-        public Set(List<int> s, int si,Vector2 c)
-        {
-            this.set = s;
-            this.score = si;
-            this.center = c;
         }
     }
 
@@ -118,26 +173,26 @@ class Utils
         }
         else
         {
-            if (alphaDenominator > 0)
+            if (alphaDenominator >= 0)
             {
-                if (alphaNumerator < 0 || alphaNumerator > alphaDenominator)
+                if (alphaNumerator <= 0 || alphaNumerator >= alphaDenominator)
                 {
                     doIntersect = false;
                 }
             }
-            else if (alphaNumerator > 0 || alphaNumerator < alphaDenominator)
+            else if (alphaNumerator >= 0 || alphaNumerator <= alphaDenominator)
             {
                 doIntersect = false;
             }
 
-            if (doIntersect && betaDenominator > 0)
+            if (doIntersect && betaDenominator >= 0)
             {
-                if (betaNumerator < 0 || betaNumerator > betaDenominator)
+                if (betaNumerator <= 0 || betaNumerator >= betaDenominator)
                 {
                     doIntersect = false;
                 }
             }
-            else if (betaNumerator > 0 || betaNumerator < betaDenominator)
+            else if (betaNumerator >= 0 || betaNumerator <= betaDenominator)
             {
                 doIntersect = false;
             }
@@ -176,6 +231,36 @@ class Utils
     }
 
     //returns indexes of visible points from interestPoints. This corresponds to a subset of all the interestPoints.
+    public static Set pointsInSight(Vector2 c, float r, Vector2[] interestPoints, List<int> interestPointsUnseen, Vector2[][] polygons)
+    {
+        List<int> visiblePoints = new List<int>();
+        int l = 0;
+        for (int i = 0; i < interestPoints.Length; i++)
+        {
+            if (interestPointsUnseen.Contains(i) == false) continue;
+            float dist = Vector2.Distance(c, interestPoints[i]);
+            if (dist > r) continue;
+
+            bool intersect = false;
+            foreach (var polygon in polygons)
+            {
+                for (int k = 0; k < polygon.Length; k++)
+                {
+                    Vector2 p3 = polygon[k], p4 = polygon[(k + 1) % polygon.Length];
+                    intersect = intersect || Utils.FasterLineSegmentIntersection(c, interestPoints[i], p3, p4);
+                }
+            }
+            if (!intersect)
+            {
+                visiblePoints.Add(i);
+                l++;
+                //Debug.Log("(" + c[0] + ", " + c[1] + "),Can see (" + interestPoints[i][0] + "," + interestPoints[i][1] + "), d = " + dist);
+            }
+        }
+        return new Set(visiblePoints, l, c);
+    }
+
+    //returns indexes of visible points from interestPoints. This corresponds to a subset of all the interestPoints.
     public static Set pointsInSight(Vector2 c, float r, Vector2[] interestPoints)
     {
         List<int> visiblePoints = new List<int>();
@@ -197,11 +282,13 @@ class Utils
 
     // Use Greedy algorithm to find N best subsets to cover the interestPoints. Needs to be improved to run multiple Greedies in parallel.
     // I wanna test this first but I'm not sure how.
-    public static int[] findBestSetsUsingGreedy(List<Set> subsets,int N)
+    public static Set[] findBestSetsUsingGreedy(List<Set> subsets,int N)
     {
         int[] bestIndex = new int[N];
         int[] bestScore = new int[N];
         Set s, bestS, tempS;
+        List<Set> tempSubsets = subsets;
+        Set[] bestSets = new Set[N];
         for (int n=0;n<N; n++)
         {
             for (int i = 0; i < subsets.Count; i++)
@@ -215,16 +302,16 @@ class Utils
             }
 
             bestS = subsets[bestIndex[n]];
+            bestSets[n] = bestS;
             subsets.RemoveAt(bestIndex[n]);
             for (int i = 0; i < subsets.Count; i++)
             {
                 s = subsets[i];
                 tempS = s;
-                Debug.Log("center"+s.center[0]+","+s.center[1]);
+                //Debug.Log("center"+s.center[0]+","+s.center[1]);
                 List<int> elementsToRemove = new List<int>();
                 foreach (int j in s.set)
                 {
-                    Debug.Log(j);
                     if (bestS.set.Contains(j))
                     {
                         //tempS.set.Remove(j);
@@ -238,37 +325,191 @@ class Utils
                 }
                 subsets[i] = tempS;
             }
-            Debug.Log("Score: " +bestScore[n]+ "Center: (" + bestS.center[0]+","+ bestS.center[1]+")");
         }
-        Debug.Log("Total covered:" + bestScore.Sum()/subsets.Count);
-        return bestIndex;
+        for(int i = 0; i < N; i++)
+        {
+            Debug.Log("Score: " + bestScore[i] + "Center: (" + bestSets[i].center[0] + "," + bestSets[i].center[1] + ")");
+        }
+        Debug.Log("Total covered:" + (float)bestScore.Sum());
+        return bestSets;
         
     }
 
-    public static float[][] getStartPositions(float[][] items, int numberofGuards,Map map)
+    public static Set[] getStartPositions(float[][] items, int numberofGuards,Map map)
     {
-        float r = 5;
+        float r = 30;
         float[][] start_positions = new float[numberofGuards][];
         Vector2[] interestPoints = new Vector2[items.Length];
         List<Set> subsets = new List<Set>();
+        float t1 = Time.realtimeSinceStartup;
         for(int i=0;i<items.Length;i++)
         {
+
+            Debug.Log(items[i][0]+" "+items[i][1]);
             interestPoints[i] = new Vector2(items[i][0], items[i][1]);
         }
-        foreach(var c in interestPoints)
+        Debug.Log("Time transforming array to vector2:"+ (Time.realtimeSinceStartup-t1));
+        t1 = Time.realtimeSinceStartup;
+        foreach (var c in interestPoints)
         {
             Set s = pointsInSight(c, r, interestPoints, map.polygons);
             subsets.Add(s);
         }
-        int[] bestIndexes = findBestSetsUsingGreedy(subsets, numberofGuards);
+        Debug.Log("Time creating sets:" + (Time.realtimeSinceStartup - t1));
+        t1 = Time.realtimeSinceStartup;
+        Set[] bestSets = findBestSetsUsingGreedy(subsets, numberofGuards);
 
-        for(int i = 0; i < numberofGuards; i++)
-        {
-            start_positions[i] = new float[] { subsets[bestIndexes[i]].center[0], subsets[bestIndexes[i]].center[1] };
-        }
-        return start_positions;
+        Debug.Log("Time finding running Greedy:" + (Time.realtimeSinceStartup - t1));
+        return bestSets;
     }
 
+
+    // CODE FOR TASK 2 //
+
+    // Use Greedy algorithm to find N best subsets to cover the interestPoints. Needs to be improved to run multiple Greedies in parallel.
+    // I wanna test this first but I'm not sure how.
+    public static Waypoint[] weightedGreedy(List<Set> subsets, Waypoint[] guardPositions)
+    {
+        int bestIndex=0;
+        float bestWeightedScore=Mathf.Infinity;
+        Set s, bestS, tempS;
+        List<Set> tempSubsets = subsets;
+        Waypoint[] newGuardPositions = guardPositions;
+        for (int i = 0; i < subsets.Count; i++)
+        {
+            s = subsets[i];
+            if (s.time/ s.score < bestWeightedScore || bestWeightedScore==Mathf.Infinity)
+            {
+                bestIndex = i;
+                bestWeightedScore = s.time / s.score;
+                //Debug.Log((s.time / s.score));
+            }
+        }
+        //Debug.Log(bestIndex);
+        bestS = subsets[bestIndex];
+        subsets.RemoveAt(bestIndex);
+        float[] updatedScore = bestS.updateSetScores(newGuardPositions);
+        newGuardPositions[(int)updatedScore[0]].time = updatedScore[1];
+        newGuardPositions[(int)updatedScore[0]].point = bestS.center;
+        newGuardPositions[(int)updatedScore[0]].set = bestS.set;
+        Debug.Log("Moved guard" + (int)updatedScore[0]);
+        newGuardPositions[(int)updatedScore[0]].print();
+        for (int i = 0; i < subsets.Count; i++)
+        {
+            s = subsets[i];
+            tempS = s;
+            List<int> elementsToRemove = new List<int>();
+            foreach (int j in s.set)
+            {
+                if (bestS.set.Contains(j))
+                {
+                    elementsToRemove.Add(j);
+                    tempS.score--;
+                }
+            }
+            foreach (int j in elementsToRemove)
+            {
+                tempS.set.Remove(j);
+            }
+            tempS.time = updatedScore[1];
+            subsets[i] = tempS;
+        }
+        
+        return newGuardPositions;
+    }
+
+    public static List<int> removeSeenPoints(List<int> s,List<int> interestPointsUnseen)
+    {
+        List<int> interestPointsUnseenNew = interestPointsUnseen;
+        foreach (var i in s)
+        {
+            interestPointsUnseenNew.Remove(i);
+        }
+        return interestPointsUnseenNew;
+    }
+
+    //public static Set[] getPositionsT2(float[][] items, int numberofGuards, Map map,float r, float[][] start_position)
+    public static Datastruct getPositionsT2(float[][] items, int numberofGuards, Map map,float r, float[][] start_position)
+    {
+        Vector2[] interestPoints = new Vector2[items.Length];
+        List<int> interestPointsUnseen = new List<int>();
+        List<Set> subsets = new List<Set>();
+        List<Waypoint>[] guardWaypoints = new List<Waypoint>[numberofGuards];
+        Waypoint[] guardCurrentPositions = new Waypoint[numberofGuards];
+        Waypoint[] newGuardPositions = new Waypoint[numberofGuards];
+        int runs = 0;
+
+        // Initialize items
+        for (int i = 0; i < items.Length; i++)
+        {
+            interestPoints[i] = new Vector2(items[i][0], items[i][1]);
+            interestPointsUnseen.Add(i);
+
+        }
+
+        //Initialize position of the guards and remove initial points that are seen
+        for (int i = 0; i < numberofGuards; i++)
+        {
+            Vector2 c = new Vector2(start_position[i][0], start_position[i][1]);
+            Set s = pointsInSight(c, r, interestPoints, map.polygons);
+            interestPointsUnseen = removeSeenPoints(s.set, interestPointsUnseen);
+            Waypoint w = new Waypoint(new Vector2(start_position[i][0], start_position[i][1]),0, s.set);
+            guardWaypoints[i] = new List<Waypoint>();
+            guardWaypoints[i].Add(w);
+        }
+
+        //Generate subsets
+        foreach (var c in interestPoints)
+        {
+            Set s = pointsInSight(c, r, interestPoints, interestPointsUnseen, map.polygons);
+            subsets.Add(s);
+        }
+
+        //While whole set isn't covered
+        while (interestPointsUnseen.Count > 0 && runs<50)
+        {
+            Debug.Log("Total Interest points to see: " + interestPoints.Length);
+            Debug.Log("left Interest points to see: "+ interestPointsUnseen.Count);
+
+            for (int i = 0; i < numberofGuards; i++)
+            {
+                guardCurrentPositions[i] = guardWaypoints[i].Last();
+                //Debug.Log("Guard: " + i + ", (" + guardCurrentPositions[i].point[0] + "," + guardCurrentPositions[i].point[1] + ")");
+            }
+            Debug.Log("\n");
+            //Update distance from each subset to the closest guard
+            foreach (Set s in subsets)
+            {
+                s.updateSetScores(guardCurrentPositions);
+            }
+
+            //Run weighted greedy and get new guard position
+            newGuardPositions = weightedGreedy(subsets, guardCurrentPositions);
+
+            for (int i = 0; i < numberofGuards; i++)
+            {
+                    guardCurrentPositions[i] = newGuardPositions[i];
+                    //Debug.Log("Guard: " + i + " moved to (" + newGuardPositions[i].point[0] + "," + newGuardPositions[i].point[1] + ")");
+                    //Debug.Log("Saw: " + newGuardPositions[i].set.Count);
+                    //Remove the new seen points from the unseenpoints
+                    //interestPointsUnseen = removeSeenPoints(newGuardPositions[i].set, interestPointsUnseen);
+            }
+            guardCurrentPositions = newGuardPositions;
+
+            for (int i = 0; i < numberofGuards; i++)
+            {
+                guardWaypoints[i].Add(guardCurrentPositions[i]);
+            }
+            runs++;
+        }
+        Debug.Log("Total Interest points to see: " + interestPoints.Length);
+        Debug.Log("lest Interest points to see: " + interestPointsUnseen.Count);
+
+        return new Datastruct(guardWaypoints, subsets);
+    }
+
+    // Tree Greedy, NOT USED FOR NOW
+    /*
     public static Set[] findNBestSetsUsingGreedy2(List<Set> subsets, int N)
     {
         Set[] bestSubsets = new Set[N];
@@ -291,7 +532,7 @@ class Utils
 
     public static GreedyTree findBestSetsUsingImprovedGreedy(List<Set> subsets, int N,int Ncandidates)
     {
-        GreedyNode start = new GreedyNode(new Set(),Ncandidates,0);
+        GreedyNode start = new GreedyNode(new Set(new List<int>(),new int(),new Vector2()),Ncandidates,0);
         GreedyTree gt = new GreedyTree(start);
         GreedyNode parent;
         parent = start;
@@ -377,8 +618,10 @@ class Utils
             // no intn: FallShort, Past, CompletelyInside
             return false;
         }
+
     }
 
+        */
     /*static bool ContainsPoint(Vector2[] polyPoints, Vector2 p)
         {
             var j = polyPoints.Length - 1;

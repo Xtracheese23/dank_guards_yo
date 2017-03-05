@@ -4,13 +4,18 @@ using System.IO;
 using UnityEngine;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using UnityEngine.UI;
 
 public class GameManager : MonoBehaviour {
     public Point[] point;
+    public Set[] guardSets;
     public Map map;
+    public Color[] colors;
     public GameObject ai;
     public GameObject mapai;
     public GameObject camera;
+
+    public Datastruct data;
     public bool useSaved;
     public string problem;
     private int numberofGuards;
@@ -18,25 +23,97 @@ public class GameManager : MonoBehaviour {
 
     private void OnDrawGizmos()
     {
-        for(int i=0; i<numberofGuards; i++)
-        {
-            if (point[i])
-            {
-                //Gizmos.color = Color.red;
-                //Gizmos.DrawCube(new Vector3(point[i].startPos[0], point[i].startPos[1], 2), new Vector3(0.5F, 0.5F, 0));
-                Gizmos.color = new Color(1, 0, 0, (float)0.5);
-                Gizmos.DrawSphere(new Vector3(point[i].startPos[0], point[i].startPos[1], 2), 5);
-                Gizmos.color = Color.blue;
-                Gizmos.DrawCube(new Vector3(point[i].goalPos[0], point[i].goalPos[1], 2), new Vector3(0.5F, 0.5F, 0));
-            }
-        }
-        for(int i=0; i < itemcount; i++)
+        int task = 2;
+        /*
+        for (int i = 0; i < itemcount; i++)
         {
             if (map)
             {
                 //Gizmos.color = Color.yellow;
                 //Gizmos.DrawSphere(new Vector3(map.items[i][0], map.items[i][1], 19), 0.5F);
                 Gizmos.DrawIcon(new Vector3(map.items[i][0], map.items[i][1], 1), "doughnut.tif", true);
+            }
+        }
+        */
+        if (task == 1)
+        {
+            for (int i = 0; i < numberofGuards; i++)
+            {
+                if (point[i])
+                {
+                    Gizmos.color = Color.green;
+                    //Gizmos.DrawCube(new Vector3(point[i].startPos[0], point[i].startPos[1], 2), new Vector3(0.5F, 0.5F, 0));
+                    //Gizmos.color = new Color(1, 0, 0, (float)0.5);
+                    Gizmos.DrawWireSphere(new Vector3(point[i].startPos[0], point[i].startPos[1], 2), 30);
+                    //Gizmos.DrawSphere(new Vector3(point[i].startPos[0], point[i].startPos[1], 2), 10);
+                    Gizmos.color = Color.blue;
+                    Gizmos.DrawCube(new Vector3(point[i].goalPos[0], point[i].goalPos[1], 2), new Vector3(0.5F, 0.5F, 0));
+                    List<float[]> unseenitems = new List<float[]>();
+                    unseenitems.AddRange(map.items);
+                    for (int j = 0; j < numberofGuards; j++)
+                    {
+                        Gizmos.color = colors[j % colors.Length];
+                        foreach (var g in guardSets[j].set)
+                        {
+                            if (j < colors.Length)
+                                Gizmos.DrawCube(new Vector3(map.items[g][0], map.items[g][1], 0), new Vector3(0.5F, 0.5F, 0));
+                            else
+                                Gizmos.DrawSphere(new Vector3(map.items[g][0], map.items[g][1], 0), 1);
+                            unseenitems.Remove(map.items[g]);
+                        }
+                    }
+                    for (int j = 0; j < unseenitems.Count; j++)
+                    {
+                        Gizmos.color = Color.black;
+                        Gizmos.DrawCube(new Vector3(unseenitems[j][0], unseenitems[j][1], 0), new Vector3(0.5F, 0.5F, 0));
+                    }
+
+                }
+            }
+        }
+        else if (task == 2)
+        {
+            for (int i = 0; i < numberofGuards; i++)
+            {
+                if (point[i])
+                {
+                    Gizmos.color = Color.green;
+                    //Gizmos.DrawCube(new Vector3(point[i].startPos[0], point[i].startPos[1], 2), new Vector3(0.5F, 0.5F, 0));
+                    //Gizmos.color = new Color(1, 0, 0, (float)0.5);
+                    Gizmos.DrawWireSphere(new Vector3(point[i].startPos[0], point[i].startPos[1], 2), 3);
+                    //Gizmos.DrawSphere(new Vector3(point[i].startPos[0], point[i].startPos[1], 2), 10);
+                    Gizmos.color = Color.blue;
+                    Gizmos.DrawCube(new Vector3(point[i].goalPos[0], point[i].goalPos[1], 2), new Vector3(0.5F, 0.5F, 0));
+                    List<float[]> unseenitems = new List<float[]>();
+                    unseenitems.AddRange(map.items);
+
+                }
+            }
+            for (int i = 0; i < numberofGuards; i++)
+            {
+                Gizmos.color = colors[i % colors.Length];
+                //Gizmos.DrawCube(new Vector3(point[i].startPos[0], point[i].startPos[1], 2), new Vector3(0.5F, 0.5F, 0));
+                //Gizmos.color = new Color(1, 0, 0, (float)0.5);
+                for(int j=0;j<data.waypoints[i].Count-1;j++)
+                {
+                    Waypoint w1 = data.waypoints[i][j];
+                    Waypoint w2 = data.waypoints[i][j+1];
+                    Debug.DrawLine(new Vector3(w1.point[0], w1.point[1], 2), new Vector3(w2.point[0], w2.point[1], 2), colors[i % colors.Length]);
+                }
+                //Gizmos.DrawSphere(new Vector3(point[i].startPos[0], point[i].startPos[1], 2), 10);
+                Gizmos.color = Color.blue;
+                Gizmos.DrawCube(new Vector3(point[i].goalPos[0], point[i].goalPos[1], 2), new Vector3(0.5F, 0.5F, 0));
+                List<float[]> unseenitems = new List<float[]>();
+                unseenitems.AddRange(map.items);
+            }
+
+            foreach (var s in data.sets)
+            {
+                Gizmos.color = colors[s.closestGuard % colors.Length];
+                foreach (var g in s.set)
+                {
+                    Gizmos.DrawCube(new Vector3(map.items[g][0], map.items[g][1], 0), new Vector3(0.5F, 0.5F, 0));
+                }
             }
         }
 
@@ -87,6 +164,12 @@ public class GameManager : MonoBehaviour {
     // Use this for initialization
     void Start ()
     {
+        colors = new Color[4];
+        colors[0] = Color.green;
+        colors[1] = Color.cyan;
+        colors[2] = Color.yellow;
+        colors[3] = Color.magenta;
+
         string json = "";
         using (StreamReader r = new StreamReader(problem))
         {
@@ -216,7 +299,15 @@ public class GameManager : MonoBehaviour {
         map.items = items;
 
         //calculate new positions
-        start_positions = Utils.getStartPositions(items, numberofGuards, map);
+        //guardSets = Utils.getStartPositions(items, numberofGuards, map);
+
+        //Run task 2
+        data = Utils.getPositionsT2(items,numberofGuards,map, 3, start_positions);
+        for (int i = 0; i < numberofGuards; i++)
+        {
+            //start_positions[i] = new float[] { guardSets[i].center[0], guardSets[i].center[1] };
+            //start_positions[i] = new float[] {data.waypoints[i].point[0], data.waypoints[i].point[1] };
+        }
 
         //Create players
 
