@@ -58,14 +58,14 @@ public class KinematicGuard : Point {
             }
         }
 
-        //check out
-        var nodes = Utils.bf(N, 0, N-1, edges);
+        //var nodes = Utils.bf(N, 0, N-1, edges);  //vertices
+        var pathw = new List<Waypoint>();
         var path = new List<Node>();
-//            Debug.Log(points[nodes[0]]);
-        path.Add(new Node(points[nodes[0]], 0));
-        for (int i = 1, len = nodes.Count; i < len; i++)
+
+        path.Add(new Node(this.waypoint[0].point, 0));
+        for (int i = 1, len = this.waypoint.Count; i < len; i++)
         {
-            path.Add(new Node(points[nodes[i]], path[i-1].time + Vector2.Distance(points[nodes[i]], points[nodes[i-1]]) / MAX_SPEED));
+            path.Add(new Node(this.waypoint[i].point, path[i-1].time + Vector2.Distance(this.waypoint[i].point, this.waypoint[i-1].point) / MAX_SPEED));
         }
         Debug.Log("Guard:" + this.guardID + "goal time " + path[path.Count - 1].time);
         var filledPath = GetFilledPath(path);
@@ -99,7 +99,7 @@ public class KinematicGuard : Point {
 
     // Use this for initialization
     void Start () {
-        transform.position = new Vector3(startPos[0], startPos[1], 1);
+ //       transform.position = new Vector3(startPos[0], startPos[1], 1);
         if (useSaved)
         {
             path = Utils.LoadFilledPath();

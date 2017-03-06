@@ -129,6 +129,7 @@ public class GameManager : MonoBehaviour {
         point = point ? point : player.GetComponent<DynamicPoint>();
         point = point ? point : player.GetComponent<KinematicPoint>();
         point = point ? point : player.GetComponent<StaticGuard>();
+        point = point ? point : player.GetComponent<KinematicGuard>();
         return point;
     }
 
@@ -141,6 +142,7 @@ public class GameManager : MonoBehaviour {
         point = point ? point : player.GetComponent<DynamicPoint>();
         point = point ? point : player.GetComponent<KinematicPoint>();
         point = point ? point : player.GetComponent<StaticGuard>();
+        point = point ? point : player.GetComponent<KinematicGuard>();
         return point;
     }
 
@@ -265,7 +267,7 @@ public class GameManager : MonoBehaviour {
         {
             if (pair.Key.StartsWith("start_pos"))
             {
-                Debug.Log(pair.Key + " Number of Guards: " + grdID);
+ //               Debug.Log(pair.Key + " Number of Guards: " + grdID);
                 var start_pos = pair.Value.ToObject<float[]>();
                 start_positions[grdID] = start_pos;
                 grdID++;
@@ -278,7 +280,7 @@ public class GameManager : MonoBehaviour {
         {
             if (pair.Key.StartsWith("goal_pos"))
             {
-                Debug.Log(pair.Key + " Number of Guards: " + grdID);
+  //              Debug.Log(pair.Key + " Number of Guards: " + grdID);
                 var end_pos = pair.Value.ToObject<float[]>();
                 end_positions[grdID] = end_pos;
                 grdID++;
@@ -291,7 +293,7 @@ public class GameManager : MonoBehaviour {
         {
             if (pair.Key.StartsWith("item_"))
             {
-                Debug.Log(pair.Key + " Number of Guards: " + grdID);
+ //               Debug.Log(pair.Key + " Number of Guards: " + grdID);
                 var item_pos = pair.Value.ToObject<float[]>();
                 items[grdID] = item_pos;
                 grdID++;
@@ -318,7 +320,7 @@ public class GameManager : MonoBehaviour {
             Debug.Log("Guard Number: " + i);
             point[i] = CreateAI();
             
-            point[i].useSaved = useSaved;
+            //point[i].useSaved = useSaved;
 
             //point[i].startPos = input.start_pos; //need to update for multiple
             point[i].startPos = start_positions[i];
