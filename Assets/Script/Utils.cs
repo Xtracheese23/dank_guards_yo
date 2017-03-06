@@ -17,23 +17,37 @@ public class Set : MonoBehaviour
         this.set = s;
         this.score = si;
         this.center = c;
-        this.time = 100;
+        this.time = 1000;
         this.closestGuard = -1;
     }
 
     //Returns the shortest time to get to the enter of the set s and the id of which guard would go there
-    public float[] updateSetScores(Waypoint[] waypoints)
+    public float[] updateSetScores(Waypoint[] waypoints, Vector2[][] polygons)
     {
         float[] score = new float[2];
         score[1] = Mathf.Infinity;
+        score[0] = -1;
         for (int i = 0; i < waypoints.Length; i++)
         {
             Waypoint w = waypoints[i];
-            if ((w.time + Vector2.Distance(w.point, this.center)) < score[1])
+
+            bool intersect = false;
+            foreach (var polygon in polygons)
             {
-                score[0] = i;
-                score[1] = (w.time + Vector2.Distance(w.point, this.center));
-                //Debug.Log(score[1]);
+                for (int k = 0; k < polygon.Length; k++)
+                {
+                    Vector2 p3 = polygon[k], p4 = polygon[(k + 1) % polygon.Length];
+                    intersect = intersect || Utils.FasterLineSegmentIntersection(w.point, this.center, p3, p4);
+                }
+            }
+            if (!intersect)
+            {
+                if ((w.time + Vector2.Distance(w.point, this.center)) < score[1])
+                {
+                    score[0] = i;
+                    score[1] = (w.time + Vector2.Distance(w.point, this.center));
+                    //Debug.Log(score[1]);
+                }
             }
         }
         this.closestGuard = (int)score[0];
@@ -368,9 +382,9 @@ class Utils
 
     // Use Greedy algorithm to find N best subsets to cover the interestPoints. Needs to be improved to run multiple Greedies in parallel.
     // I wanna test this first but I'm not sure how.
-    public static Waypoint[] weightedGreedy(List<Set> subsets, Waypoint[] guardPositions)
+    public static Waypoint[] weightedGreedy(List<Set> subsets, Waypoint[] guardPositions, Vector2[][] polygons)
     {
-        int bestIndex=0;
+        int bestIndex=-1;
         float bestWeightedScore=Mathf.Infinity;
         Set s, bestS, tempS;
         List<Set> tempSubsets = subsets;
@@ -378,6 +392,7 @@ class Utils
         for (int i = 0; i < subsets.Count; i++)
         {
             s = subsets[i];
+            if (s.closestGuard == -1) continue;
             if (s.time/ s.score < bestWeightedScore || bestWeightedScore==Mathf.Infinity)
             {
                 bestIndex = i;
@@ -386,9 +401,11 @@ class Utils
             }
         }
         //Debug.Log(bestIndex);
+        if (bestIndex == -1)
+            return null;
         bestS = subsets[bestIndex];
         subsets.RemoveAt(bestIndex);
-        float[] updatedScore = bestS.updateSetScores(newGuardPositions);
+        float[] updatedScore = bestS.updateSetScores(newGuardPositions, polygons);
         newGuardPositions[(int)updatedScore[0]].time = updatedScore[1];
         newGuardPositions[(int)updatedScore[0]].point = bestS.center;
         newGuardPositions[(int)updatedScore[0]].set = bestS.set;
@@ -466,7 +483,7 @@ class Utils
         }
 
         //While whole set isn't covered
-        while (interestPointsUnseen.Count > 0 && runs<50)
+        while (interestPointsUnseen.Count > 1 && runs<30)
         {
             Debug.Log("Total Interest points to see: " + interestPoints.Length);
             Debug.Log("left Interest points to see: "+ interestPointsUnseen.Count);
@@ -474,25 +491,24 @@ class Utils
             for (int i = 0; i < numberofGuards; i++)
             {
                 guardCurrentPositions[i] = guardWaypoints[i].Last();
-                //Debug.Log("Guard: " + i + ", (" + guardCurrentPositions[i].point[0] + "," + guardCurrentPositions[i].point[1] + ")");
             }
-            Debug.Log("\n");
             //Update distance from each subset to the closest guard
             foreach (Set s in subsets)
             {
-                s.updateSetScores(guardCurrentPositions);
+                s.updateSetScores(guardCurrentPositions, map.polygons);
             }
 
             //Run weighted greedy and get new guard position
-            newGuardPositions = weightedGreedy(subsets, guardCurrentPositions);
-
+            newGuardPositions = weightedGreedy(subsets, guardCurrentPositions,map.polygons);
+            if (newGuardPositions == null)
+                break;
             for (int i = 0; i < numberofGuards; i++)
             {
                     guardCurrentPositions[i] = newGuardPositions[i];
                     //Debug.Log("Guard: " + i + " moved to (" + newGuardPositions[i].point[0] + "," + newGuardPositions[i].point[1] + ")");
                     //Debug.Log("Saw: " + newGuardPositions[i].set.Count);
                     //Remove the new seen points from the unseenpoints
-                    //interestPointsUnseen = removeSeenPoints(newGuardPositions[i].set, interestPointsUnseen);
+                    interestPointsUnseen = removeSeenPoints(newGuardPositions[i].set, interestPointsUnseen);
             }
             guardCurrentPositions = newGuardPositions;
 
@@ -502,8 +518,9 @@ class Utils
             }
             runs++;
         }
-        Debug.Log("Total Interest points to see: " + interestPoints.Length);
-        Debug.Log("lest Interest points to see: " + interestPointsUnseen.Count);
+        Debug.Log("Final: Total Interest points to see: " + interestPoints.Length);
+        Debug.Log("Final: left Interest points to see: " + interestPointsUnseen.Count);
+        Debug.Log("Runs: " + runs);
 
         return new Datastruct(guardWaypoints, subsets);
     }
