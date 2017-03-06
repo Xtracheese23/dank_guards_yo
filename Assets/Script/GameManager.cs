@@ -110,7 +110,10 @@ public class GameManager : MonoBehaviour {
 
             foreach (var s in data.sets)
             {
-                Gizmos.color = colors[s.closestGuard % colors.Length];
+                if(s.closestGuard>0)
+                    Gizmos.color = colors[s.closestGuard % colors.Length];
+                else
+                    Gizmos.color = Color.black;
                 foreach (var g in s.set)
                 {
                     Gizmos.DrawCube(new Vector3(map.items[g][0], map.items[g][1], 0), new Vector3(0.5F, 0.5F, 0));

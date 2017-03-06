@@ -409,7 +409,7 @@ class Utils
         newGuardPositions[(int)updatedScore[0]].time = updatedScore[1];
         newGuardPositions[(int)updatedScore[0]].point = bestS.center;
         newGuardPositions[(int)updatedScore[0]].set = bestS.set;
-        Debug.Log("Moved guard" + (int)updatedScore[0]);
+        //Debug.Log("Moved guard" + (int)updatedScore[0]);
         newGuardPositions[(int)updatedScore[0]].print();
         for (int i = 0; i < subsets.Count; i++)
         {
@@ -443,6 +443,49 @@ class Utils
             interestPointsUnseenNew.Remove(i);
         }
         return interestPointsUnseenNew;
+    }
+
+
+    List<Waypoint> GetFilledWaypoints(List<Waypoint> path,List<int> interestPoints)
+    {
+        float MAX_SPEED = 1;
+        float DELTA_T = (float)0.5;
+        List<Waypoint> filledPath = new List<Waypoint>();
+        filledPath.Add(path[0]);
+        for (var i = 0; i < path.Count - 1; i++)
+        {
+            Vector2 v = (path[i].point - path[i].point).normalized * MAX_SPEED;
+            var totalT = path[i + 1].time - path[i].time;
+            float sumT = 0;
+            while (sumT < totalT)
+            {
+                var dt = Mathf.Min(DELTA_T, totalT - sumT);
+                sumT += dt;
+                filledPath.Add(new Waypoint(path[i].point + v * sumT, path[i].time + sumT,interestPoints));
+            }
+        }
+        return filledPath;
+    }
+
+    List<int> GetVisiblePointsFromPath(List<Waypoint> path, Vector2[] interestPoints, List<int> pointsLeftToSee,float r,Vector2[][] polygons)
+    {
+        float MAX_SPEED = 1;
+        float DELTA_T = (float)0.5;
+        List<int> pointsSeen = new List<int>();
+        for (var i = 0; i < path.Count - 1; i++)
+        {
+            Vector2 v = (path[i].point - path[i].point).normalized * MAX_SPEED;
+            var totalT = path[i + 1].time - path[i].time;
+            float sumT = 0;
+            while (sumT < totalT)
+            {
+                var dt = Mathf.Min(DELTA_T, totalT - sumT);
+                sumT += dt;
+                Set s = pointsInSight(path[i].point + v * sumT, r, interestPoints, polygons);
+
+            }
+        }
+        return pointsSeen;
     }
 
     //public static Set[] getPositionsT2(float[][] items, int numberofGuards, Map map,float r, float[][] start_position)
