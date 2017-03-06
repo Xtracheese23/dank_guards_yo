@@ -14,6 +14,7 @@ public class GameManager : MonoBehaviour {
     public GameObject ai;
     public GameObject mapai;
     public GameObject camera;
+    public int task = 2;
 
     public Datastruct data;
     public bool useSaved;
@@ -23,7 +24,7 @@ public class GameManager : MonoBehaviour {
 
     private void OnDrawGizmos()
     {
-        int task = 2;
+        
         /*
         for (int i = 0; i < itemcount; i++)
         {
@@ -335,6 +336,11 @@ public class GameManager : MonoBehaviour {
             point[i].guardID = i;
 
             point[i].polygons = inputPolygon;
+
+            if (task == 2)
+            {
+                point[i].waypoint = data.waypoints[i];
+            }
         }
 
 

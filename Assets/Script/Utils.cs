@@ -64,7 +64,7 @@ public struct Waypoint
 public struct Datastruct
 {
     public List<Set> sets;
-    public List<Waypoint>[] waypoints;
+    public List<Waypoint>[] waypoints;  //Guards 1-N, list of waypoints [x,y]
 
     public Datastruct(List<Waypoint>[] w, List<Set> s)
     {
