@@ -54,6 +54,38 @@ public class Set : MonoBehaviour
         this.time = score[1];
         return score;
     }
+
+    public void getVisiblePointsFromPath(Waypoint[] guardPos, Vector2[] interestPoints, List<int> pointsLeftToSee, float r, Vector2[][] polygons)
+    {
+        float DELTA_X = (float)0.5;
+        List<int> pointsSeen = new List<int>();
+        int closestGuard = -1;
+        float mind = Mathf.Infinity;
+        for (var i = 0; i < guardPos.Length; i++)
+        {
+            float d = Vector2.Distance(guardPos[i].point, this.center);
+            if (d < mind)
+                closestGuard = i;
+        }
+
+        Vector2 v = (guardPos[closestGuard].point - this.center).normalized;
+        var totalD = Vector2.Distance(guardPos[closestGuard].point ,this.center);
+        float sumD = 0;
+        while (sumD < totalD)
+        {
+            var dx = Mathf.Min(DELTA_X, totalD - sumD);
+            sumD += dx;
+            Set s = Utils.pointsInSight(guardPos[closestGuard].point + v * sumD, r, interestPoints, polygons);
+            foreach (int j in s.set)
+            {
+                if (!pointsSeen.Contains(j))
+                    pointsSeen.Add(j);
+            }
+        }
+        this.set = pointsSeen;
+        this.score = pointsSeen.Count;
+        return;
+    }
 }
 
 public struct Waypoint
@@ -274,26 +306,6 @@ class Utils
         return new Set(visiblePoints, l, c);
     }
 
-    //returns indexes of visible points from interestPoints. This corresponds to a subset of all the interestPoints.
-    public static Set pointsInSight(Vector2 c, float r, Vector2[] interestPoints)
-    {
-        List<int> visiblePoints = new List<int>();
-        int l = 0;
-        for (int i = 0; i < interestPoints.Length; i++)
-        {
-            float dist = Vector2.Distance(c, interestPoints[i]);
-            if (dist > r) continue;
-            visiblePoints.Add(i);
-            l++;
-            //Debug.Log("(" + c[0] + ", " + c[1] + "),Can see (" + interestPoints[i][0] + "," + interestPoints[i][1] + "), d = " + dist);
-        }
-        Set set = new Set(visiblePoints, l, c);
-        //Debug.Log("(" + c[0] + ", " + c[1] + "),score "+set.score);
-        return set;
-    }
-
-
-
     // Use Greedy algorithm to find N best subsets to cover the interestPoints. Needs to be improved to run multiple Greedies in parallel.
     // I wanna test this first but I'm not sure how.
     public static Set[] findBestSetsUsingGreedy(List<Set> subsets,int N)
@@ -445,6 +457,27 @@ class Utils
         return interestPointsUnseenNew;
     }
 
+    public static List<int> removeSeenPointsFromPath(Waypoint guardPos, Vector2 endPoint,Vector2[] interestPoints, List<int> interestPointsUnseen, float r, Vector2[][] polygons)
+    {
+        float DELTA_X = (float)0.5;
+        List<int> interestPointsUnseenNew = interestPointsUnseen;
+
+        Vector2 v = (guardPos.point - endPoint).normalized;
+        var totalD = Vector2.Distance(guardPos.point, endPoint);
+        float sumD = 0;
+        while (sumD < totalD)
+        {
+            var dx = Mathf.Min(DELTA_X, totalD - sumD);
+            sumD += dx;
+            Set s1 = Utils.pointsInSight(guardPos.point + v * sumD, r, interestPoints, polygons);
+            foreach (int j in s1.set)
+            {
+                if (!interestPointsUnseenNew.Contains(j))
+                    interestPointsUnseenNew.Add(j);
+            }
+        }
+        return interestPointsUnseenNew;
+    }
 
     List<Waypoint> GetFilledWaypoints(List<Waypoint> path,List<int> interestPoints)
     {
@@ -465,27 +498,6 @@ class Utils
             }
         }
         return filledPath;
-    }
-
-    List<int> GetVisiblePointsFromPath(List<Waypoint> path, Vector2[] interestPoints, List<int> pointsLeftToSee,float r,Vector2[][] polygons)
-    {
-        float MAX_SPEED = 1;
-        float DELTA_T = (float)0.5;
-        List<int> pointsSeen = new List<int>();
-        for (var i = 0; i < path.Count - 1; i++)
-        {
-            Vector2 v = (path[i].point - path[i].point).normalized * MAX_SPEED;
-            var totalT = path[i + 1].time - path[i].time;
-            float sumT = 0;
-            while (sumT < totalT)
-            {
-                var dt = Mathf.Min(DELTA_T, totalT - sumT);
-                sumT += dt;
-                Set s = pointsInSight(path[i].point + v * sumT, r, interestPoints, polygons);
-
-            }
-        }
-        return pointsSeen;
     }
 
     //public static Set[] getPositionsT2(float[][] items, int numberofGuards, Map map,float r, float[][] start_position)
@@ -516,12 +528,14 @@ class Utils
             Waypoint w = new Waypoint(new Vector2(start_position[i][0], start_position[i][1]),0, s.set);
             guardWaypoints[i] = new List<Waypoint>();
             guardWaypoints[i].Add(w);
+            guardCurrentPositions[i] = w;
         }
 
         //Generate subsets
         foreach (var c in interestPoints)
         {
             Set s = pointsInSight(c, r, interestPoints, interestPointsUnseen, map.polygons);
+            //s.getVisiblePointsFromPath(guardCurrentPositions, interestPoints, interestPointsUnseen, r, map.polygons);
             subsets.Add(s);
         }
 
@@ -551,7 +565,8 @@ class Utils
                     //Debug.Log("Guard: " + i + " moved to (" + newGuardPositions[i].point[0] + "," + newGuardPositions[i].point[1] + ")");
                     //Debug.Log("Saw: " + newGuardPositions[i].set.Count);
                     //Remove the new seen points from the unseenpoints
-                    interestPointsUnseen = removeSeenPoints(newGuardPositions[i].set, interestPointsUnseen);
+                    //interestPointsUnseen = removeSeenPoints(newGuardPositions[i].set, interestPointsUnseen);
+                    interestPointsUnseen = removeSeenPointsFromPath(guardCurrentPositions[i], newGuardPositions[i].point, interestPoints, interestPointsUnseen, r, map.polygons);
             }
             guardCurrentPositions = newGuardPositions;
 
