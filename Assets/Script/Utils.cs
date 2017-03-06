@@ -526,7 +526,7 @@ class Utils
         }
 
         //While whole set isn't covered
-        while (interestPointsUnseen.Count > 1 && runs<30)
+        while (interestPointsUnseen.Count >= 1 && runs<100)
         {
             Debug.Log("Total Interest points to see: " + interestPoints.Length);
             Debug.Log("left Interest points to see: "+ interestPointsUnseen.Count);

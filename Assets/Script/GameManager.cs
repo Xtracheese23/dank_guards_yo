@@ -78,13 +78,11 @@ public class GameManager : MonoBehaviour {
             {
                 if (point[i])
                 {
-                    Gizmos.color = Color.green;
-                    //Gizmos.DrawCube(new Vector3(point[i].startPos[0], point[i].startPos[1], 2), new Vector3(0.5F, 0.5F, 0));
-                    //Gizmos.color = new Color(1, 0, 0, (float)0.5);
-                    Gizmos.DrawWireSphere(new Vector3(point[i].startPos[0], point[i].startPos[1], 2), 3);
-                    //Gizmos.DrawSphere(new Vector3(point[i].startPos[0], point[i].startPos[1], 2), 10);
+                    //Gizmos.color = Color.blue;
+                    
                     Gizmos.color = Color.blue;
-                    Gizmos.DrawCube(new Vector3(point[i].goalPos[0], point[i].goalPos[1], 2), new Vector3(0.5F, 0.5F, 0));
+                    Gizmos.DrawCube(new Vector3(point[i].startPos[0], point[i].startPos[1], 2), new Vector3(0.5F, 0.5F, 0));
+                    //Gizmos.DrawCube(new Vector3(point[i].goalPos[0], point[i].goalPos[1], 2), new Vector3(0.5F, 0.5F, 0));
                     List<float[]> unseenitems = new List<float[]>();
                     unseenitems.AddRange(map.items);
 
@@ -92,31 +90,40 @@ public class GameManager : MonoBehaviour {
             }
             for (int i = 0; i < numberofGuards; i++)
             {
+                //draws sphere around player
+                Gizmos.color = Color.green;
+                Gizmos.DrawWireSphere(new Vector3(point[i].transform.position[0], point[i].transform.position[1], 2), 3);
+
+                //draws player path
                 Gizmos.color = colors[i % colors.Length];
-                //Gizmos.DrawCube(new Vector3(point[i].startPos[0], point[i].startPos[1], 2), new Vector3(0.5F, 0.5F, 0));
-                //Gizmos.color = new Color(1, 0, 0, (float)0.5);
                 for(int j=0;j<data.waypoints[i].Count-1;j++)
                 {
                     Waypoint w1 = data.waypoints[i][j];
                     Waypoint w2 = data.waypoints[i][j+1];
                     Debug.DrawLine(new Vector3(w1.point[0], w1.point[1], 2), new Vector3(w2.point[0], w2.point[1], 2), colors[i % colors.Length]);
                 }
-                //Gizmos.DrawSphere(new Vector3(point[i].startPos[0], point[i].startPos[1], 2), 10);
-                Gizmos.color = Color.blue;
-                Gizmos.DrawCube(new Vector3(point[i].goalPos[0], point[i].goalPos[1], 2), new Vector3(0.5F, 0.5F, 0));
-                List<float[]> unseenitems = new List<float[]>();
-                unseenitems.AddRange(map.items);
+
+                for (int j = 0; j < itemcount; j++)
+                {
+                    if (map.items[j] !=null && Vector2.Distance(point[i].transform.position, new Vector2(map.items[j][0], map.items[j][1])) < 3)
+                    {
+                        map.seen[j] = map.items[j];
+                        map.items[j] = null;
+                    }
+                }
             }
 
-            foreach (var s in data.sets)
+            for (int j = 0; j < itemcount; j++)
             {
-                if(s.closestGuard>0)
-                    Gizmos.color = colors[s.closestGuard % colors.Length];
-                else
-                    Gizmos.color = Color.black;
-                foreach (var g in s.set)
+                if (map.items[j] != null)
                 {
-                    Gizmos.DrawCube(new Vector3(map.items[g][0], map.items[g][1], 0), new Vector3(0.5F, 0.5F, 0));
+                    //Gizmos.color = Color.gray;
+                    //Gizmos.DrawCube(new Vector3(item[0], item[1], 0), new Vector3(0.5F, 0.5F, 0));
+                    Gizmos.DrawIcon(new Vector3(map.items[j][0], map.items[j][1], 0), "doughnut.tif", true);
+                }
+                else
+                {
+                    Gizmos.DrawIcon(new Vector3(map.seen[j][0], map.seen[j][1], 0), "eatendoughnut.tif", true);
                 }
             }
         }
@@ -303,6 +310,8 @@ public class GameManager : MonoBehaviour {
             }
         }
         map.items = items;
+        map.seen = new float[items.Length][];
+
 
         //calculate new positions
         //guardSets = Utils.getStartPositions(items, numberofGuards, map);
