@@ -13,50 +13,6 @@ public class KinematicGuard : Point {
     private const float DELTA_T = 0.01F;
 
     List<Node> Plan() {
-        //builds polygon map
-        foreach (var polygon in polygons)
-            N += polygon.Length;
-
-        N += 2;
-        points = new Vector2[N];
-        points[0] = new Vector2(startPos[0], startPos[1]);
-        int n = 1;
-        foreach (var polygon in polygons)
-            foreach (var point in polygon)
-                points[n++] = point;
-        points[n++] = new Vector2(goalPos[0], goalPos[1]);
-
-        List<Utils.Edge> edges = new List<Utils.Edge>();
-
-        for (int i = 0; i < N; i++)
-        {
-            for (int j = i + 1; j < N; j++)
-            {
-                bool intersect = false;
-                for (int k = 0; k < boundaryPolygon.Length; k++)
-                {
-                    Vector2 p3 = boundaryPolygon[k], p4 = boundaryPolygon[(k + 1) % boundaryPolygon.Length];
-
-                    intersect = intersect || Utils.FasterLineSegmentIntersection(points[i], points[j], p3, p4);
-                }
-                foreach (var polygon in polygons)
-                {
-                    for (int k = 0; k < polygon.Length; k++)
-                    {
-                        Vector2 p3 = polygon[k], p4 = polygon[(k + 1) % polygon.Length];
-                        if (points[i] == p3 || points[j] == p4 || points[i] == p4 || points[j] == p3) continue;
-                        
-                        intersect = intersect || Utils.FasterLineSegmentIntersection(points[i], points[j], p3, p4);
-                    }
-                }
-                if (!intersect) {
-                    float dist = Vector2.Distance(points[i], points[j]);
-                    edges.Add(new Utils.Edge(i, j, dist));
-                    edges.Add(new Utils.Edge(j, i, dist));
-                    Debug.Log("edge " + i + " " + j + " " + dist);
-                }
-            }
-        }
 
         //var nodes = Utils.bf(N, 0, N-1, edges);  //vertices
         var pathw = new List<Waypoint>();
