@@ -25,17 +25,6 @@ public class GameManager : MonoBehaviour {
     private void OnDrawGizmos()
     {
         
-        /*
-        for (int i = 0; i < itemcount; i++)
-        {
-            if (map)
-            {
-                //Gizmos.color = Color.yellow;
-                //Gizmos.DrawSphere(new Vector3(map.items[i][0], map.items[i][1], 19), 0.5F);
-                Gizmos.DrawIcon(new Vector3(map.items[i][0], map.items[i][1], 1), "doughnut.tif", true);
-            }
-        }
-        */
         if (task == 1)
         {
             for (int i = 0; i < numberofGuards; i++)
@@ -45,7 +34,7 @@ public class GameManager : MonoBehaviour {
                     Gizmos.color = Color.green;
                     //Gizmos.DrawCube(new Vector3(point[i].startPos[0], point[i].startPos[1], 2), new Vector3(0.5F, 0.5F, 0));
                     //Gizmos.color = new Color(1, 0, 0, (float)0.5);
-                    Gizmos.DrawWireSphere(new Vector3(point[i].startPos[0], point[i].startPos[1], 2), 30);
+                    Gizmos.DrawWireSphere(new Vector3(point[i].startPos[0], point[i].startPos[1], 2), map.sensor_range);
                     //Gizmos.DrawSphere(new Vector3(point[i].startPos[0], point[i].startPos[1], 2), 10);
                     Gizmos.color = Color.blue;
                     Gizmos.DrawCube(new Vector3(point[i].goalPos[0], point[i].goalPos[1], 2), new Vector3(0.5F, 0.5F, 0));
@@ -92,7 +81,7 @@ public class GameManager : MonoBehaviour {
             {
                 //draws sphere around player
                 Gizmos.color = Color.green;
-                Gizmos.DrawWireSphere(new Vector3(point[i].transform.position[0], point[i].transform.position[1], 2), 3);
+                Gizmos.DrawWireSphere(new Vector3(point[i].transform.position[0], point[i].transform.position[1], 2), map.sensor_range);
 
                 //draws player path
                 Gizmos.color = colors[i % colors.Length];
@@ -105,7 +94,7 @@ public class GameManager : MonoBehaviour {
 
                 for (int j = 0; j < itemcount; j++)
                 {
-                    if (map.items[j] !=null && Vector2.Distance(point[i].transform.position, new Vector2(map.items[j][0], map.items[j][1])) < 3)
+                    if (map.items[j] !=null && Vector2.Distance(point[i].transform.position, new Vector2(map.items[j][0], map.items[j][1])) < map.sensor_range)
                     {
                         map.seen[j] = map.items[j];
                         map.items[j] = null;
@@ -311,27 +300,41 @@ public class GameManager : MonoBehaviour {
         }
         map.items = items;
         map.seen = new float[items.Length][];
+        foreach (var pair in input.polygon)
+        {
+            if (pair.Key.StartsWith("sensor_range"))
+            {
+                map.sensor_range = pair.Value.ToObject<float>();
+                break;
+            }
+        }
 
 
         //calculate new positions
         //guardSets = Utils.getStartPositions(items, numberofGuards, map);
 
-        //Run task 2
-        data = Utils.getPositionsT2(items,numberofGuards,map, 3, start_positions);
-        for (int i = 0; i < numberofGuards; i++)
+        if (task == 1)
         {
-            //start_positions[i] = new float[] { guardSets[i].center[0], guardSets[i].center[1] };
-            //start_positions[i] = new float[] {data.waypoints[i].point[0], data.waypoints[i].point[1] };
+            guardSets = Utils.getStartPositions(items, numberofGuards, map);
+            for(int j = 0; j < guardSets.Length; j++)
+            {
+                start_positions[j][0] = guardSets[j].center[0];
+                start_positions[j][1] = guardSets[j].center[1];
+
+            }
+
         }
+        else if (task == 2)
+            data = Utils.getPositionsT2(items, numberofGuards, map, start_positions, input.v_max);
 
         //Create players
 
         this.point = new Point[numberofGuards];
         for (int i = 0; i < numberofGuards; i++)
-        {            
+        {
             Debug.Log("Guard Number: " + i);
             point[i] = CreateAI();
-            
+
             //point[i].useSaved = useSaved;
 
             //point[i].startPos = input.start_pos; //need to update for multiple

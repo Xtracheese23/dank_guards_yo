@@ -13,6 +13,7 @@ public class Map : MonoBehaviour
     public Vector2[] boundaryPolygon;
     public float[][] items;
     public float[][] seen;
+    public float sensor_range;
     //public bool useSaved; // hack
 
     //public List<Node> path;

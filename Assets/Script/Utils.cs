@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 using Newtonsoft.Json;
 using UnityEngine;
 
-public class Set : MonoBehaviour
+public class Set
 {
     public List<int> set;
     public int score;
@@ -270,7 +270,6 @@ class Utils
             {
                 visiblePoints.Add(i);
                 l++;
-                //Debug.Log("(" + c[0] + ", " + c[1] + "),Can see (" + interestPoints[i][0] + "," + interestPoints[i][1] + "), d = " + dist);
             }
         }
         return new Set(visiblePoints, l,c);
@@ -300,7 +299,6 @@ class Utils
             {
                 visiblePoints.Add(i);
                 l++;
-                //Debug.Log("(" + c[0] + ", " + c[1] + "),Can see (" + interestPoints[i][0] + "," + interestPoints[i][1] + "), d = " + dist);
             }
         }
         return new Set(visiblePoints, l, c);
@@ -363,22 +361,19 @@ class Utils
 
     public static Set[] getStartPositions(float[][] items, int numberofGuards,Map map)
     {
-        float r = 30;
         float[][] start_positions = new float[numberofGuards][];
         Vector2[] interestPoints = new Vector2[items.Length];
         List<Set> subsets = new List<Set>();
         float t1 = Time.realtimeSinceStartup;
         for(int i=0;i<items.Length;i++)
         {
-
-            Debug.Log(items[i][0]+" "+items[i][1]);
             interestPoints[i] = new Vector2(items[i][0], items[i][1]);
         }
         Debug.Log("Time transforming array to vector2:"+ (Time.realtimeSinceStartup-t1));
         t1 = Time.realtimeSinceStartup;
         foreach (var c in interestPoints)
         {
-            Set s = pointsInSight(c, r, interestPoints, map.polygons);
+            Set s = pointsInSight(c, map.sensor_range, interestPoints, map.polygons);
             subsets.Add(s);
         }
         Debug.Log("Time creating sets:" + (Time.realtimeSinceStartup - t1));
@@ -386,6 +381,7 @@ class Utils
         Set[] bestSets = findBestSetsUsingGreedy(subsets, numberofGuards);
 
         Debug.Log("Time finding running Greedy:" + (Time.realtimeSinceStartup - t1));
+
         return bestSets;
     }
 
@@ -394,13 +390,14 @@ class Utils
 
     // Use Greedy algorithm to find N best subsets to cover the interestPoints. Needs to be improved to run multiple Greedies in parallel.
     // I wanna test this first but I'm not sure how.
-    public static Waypoint[] weightedGreedy(List<Set> subsets, Waypoint[] guardPositions, Vector2[][] polygons)
+    public static Waypoint[] weightedGreedy(List<Set> subsets, Waypoint[] guardPositions, Vector2[][] polygons,float max_speed)
     {
         int bestIndex=-1;
         float bestWeightedScore=Mathf.Infinity;
+        float bestTime = Mathf.Infinity;
         Set s, bestS, tempS;
         List<Set> tempSubsets = subsets;
-        Waypoint[] newGuardPositions = guardPositions;
+        Waypoint[] newGuardPositions = (Waypoint[])guardPositions.Clone();
         for (int i = 0; i < subsets.Count; i++)
         {
             s = subsets[i];
@@ -409,7 +406,17 @@ class Utils
             {
                 bestIndex = i;
                 bestWeightedScore = s.time / s.score;
+                bestTime = s.time;
                 //Debug.Log((s.time / s.score));
+            }
+            else if(s.time / s.score == bestWeightedScore)
+            {
+                if(s.time<bestTime)
+                {
+                    bestIndex = i;
+                    bestWeightedScore = s.time / s.score;
+                    bestTime = s.time;
+                }
             }
         }
         //Debug.Log(bestIndex);
@@ -418,11 +425,11 @@ class Utils
         bestS = subsets[bestIndex];
         subsets.RemoveAt(bestIndex);
         float[] updatedScore = bestS.updateSetScores(newGuardPositions, polygons);
-        newGuardPositions[(int)updatedScore[0]].time = updatedScore[1];
+        newGuardPositions[(int)updatedScore[0]].time = updatedScore[1]/max_speed;
         newGuardPositions[(int)updatedScore[0]].point = bestS.center;
         newGuardPositions[(int)updatedScore[0]].set = bestS.set;
-        //Debug.Log("Moved guard" + (int)updatedScore[0]);
-        newGuardPositions[(int)updatedScore[0]].print();
+        //Debug.Log("Moved guard " + (int)updatedScore[0]);
+        //newGuardPositions[(int)updatedScore[0]].print();
         for (int i = 0; i < subsets.Count; i++)
         {
             s = subsets[i];
@@ -443,7 +450,91 @@ class Utils
             tempS.time = updatedScore[1];
             subsets[i] = tempS;
         }
-        
+        return newGuardPositions;
+    }
+
+    public static Waypoint[] weightedGreedy2(List<Set> subsets, Waypoint[] guardPositions, Vector2[][] polygons,float r,Vector2[] interestPoints,float max_speed)
+    {
+        int bestIndex = -1;
+        float bestWeightedScore = Mathf.Infinity;
+        float bestTime = Mathf.Infinity;
+        Set s, bestS, tempS;
+        List<Set> tempSubsets = subsets;
+        Waypoint[] newGuardPositions = (Waypoint[])guardPositions.Clone();
+        for (int i = 0; i < subsets.Count; i++)
+        {
+            s = subsets[i];
+            if (s.closestGuard == -1) continue;
+            if (s.time / s.score < bestWeightedScore || bestWeightedScore == Mathf.Infinity)
+            {
+                bestIndex = i;
+                bestWeightedScore = s.time / s.score;
+                bestTime = s.time;
+                //Debug.Log((s.time / s.score));
+            }
+            else if (s.time / s.score == bestWeightedScore)
+            {
+                if (s.time < bestTime)
+                {
+                    bestIndex = i;
+                    bestWeightedScore = s.time / s.score;
+                    bestTime = s.time;
+                }
+            }
+        }
+        //Debug.Log(bestIndex);
+        if (bestIndex == -1)
+            return null;
+        bestS = subsets[bestIndex];
+        subsets.RemoveAt(bestIndex);
+        float[] updatedScore = bestS.updateSetScores(newGuardPositions, polygons);
+        newGuardPositions[(int)updatedScore[0]].time = updatedScore[1]/max_speed;
+        newGuardPositions[(int)updatedScore[0]].point = bestS.center;
+        newGuardPositions[(int)updatedScore[0]].set = bestS.set;
+        //Debug.Log("Moved guard " + (int)updatedScore[0]);
+        //newGuardPositions[(int)updatedScore[0]].print();
+
+        float DELTA_X = (float)0.05;
+        List<int> interestPointsToRemove = new List<int>();
+        Vector2 p1 = guardPositions[(int)updatedScore[0]].point;
+        Vector2 p2 = newGuardPositions[(int)updatedScore[0]].point;
+        Vector2 v = (p2 - p1).normalized;
+        float totalD = Vector2.Distance(p1,p2);
+        float sumD = 0;
+        while (sumD < totalD)
+        {
+            float dx = Mathf.Min(DELTA_X, totalD - sumD);
+            sumD += dx;
+            Set s1 = pointsInSight(p1 + v * sumD, r, interestPoints, polygons);
+            foreach (int j in s1.set)
+            {
+                if (!interestPointsToRemove.Contains(j))
+                    interestPointsToRemove.Add(j);
+            }
+        }
+
+        for (int i = 0; i < subsets.Count; i++)
+        {
+            s = subsets[i];
+            tempS = s;
+            List<int> elementsToRemove = new List<int>();
+
+            foreach (int j in s.set)
+            {
+                if (interestPointsToRemove.Contains(j))
+                {
+                    elementsToRemove.Add(j);
+                    tempS.score--;
+                }
+            }
+            foreach (int j in elementsToRemove)
+            {
+                tempS.set.Remove(j);
+            }
+            tempS.time = updatedScore[1];
+            subsets[i] = tempS;
+        }
+        Debug.Log("Greedy: " + interestPointsToRemove.Count + " points seen.");
         return newGuardPositions;
     }
 
@@ -457,25 +548,28 @@ class Utils
         return interestPointsUnseenNew;
     }
 
+
+
     public static List<int> removeSeenPointsFromPath(Waypoint guardPos, Vector2 endPoint,Vector2[] interestPoints, List<int> interestPointsUnseen, float r, Vector2[][] polygons)
     {
-        float DELTA_X = (float)0.5;
+        float DELTA_X = (float)0.05;
         List<int> interestPointsUnseenNew = interestPointsUnseen;
-
-        Vector2 v = (guardPos.point - endPoint).normalized;
-        var totalD = Vector2.Distance(guardPos.point, endPoint);
+        int s = interestPointsUnseen.Count;
+        Vector2 v = (endPoint- guardPos.point).normalized;
+        float totalD = Vector2.Distance(guardPos.point, endPoint);
         float sumD = 0;
         while (sumD < totalD)
         {
-            var dx = Mathf.Min(DELTA_X, totalD - sumD);
+            float dx = Mathf.Min(DELTA_X, totalD - sumD);
             sumD += dx;
             Set s1 = Utils.pointsInSight(guardPos.point + v * sumD, r, interestPoints, polygons);
             foreach (int j in s1.set)
             {
-                if (!interestPointsUnseenNew.Contains(j))
-                    interestPointsUnseenNew.Add(j);
+                if (interestPointsUnseenNew.Contains(j))
+                    interestPointsUnseenNew.Remove(j);
             }
         }
+        Debug.Log("removeSeenPointsFromPath: " + (s - interestPointsUnseenNew.Count) + " points seen.");
         return interestPointsUnseenNew;
     }
 
@@ -501,7 +595,7 @@ class Utils
     }
 
     //public static Set[] getPositionsT2(float[][] items, int numberofGuards, Map map,float r, float[][] start_position)
-    public static Datastruct getPositionsT2(float[][] items, int numberofGuards, Map map,float r, float[][] start_position)
+    public static Datastruct getPositionsT2(float[][] items, int numberofGuards, Map map, float[][] start_position,float max_speed)
     {
         Vector2[] interestPoints = new Vector2[items.Length];
         List<int> interestPointsUnseen = new List<int>();
@@ -523,7 +617,7 @@ class Utils
         for (int i = 0; i < numberofGuards; i++)
         {
             Vector2 c = new Vector2(start_position[i][0], start_position[i][1]);
-            Set s = pointsInSight(c, r, interestPoints, map.polygons);
+            Set s = pointsInSight(c, map.sensor_range, interestPoints, map.polygons);
             interestPointsUnseen = removeSeenPoints(s.set, interestPointsUnseen);
             Waypoint w = new Waypoint(new Vector2(start_position[i][0], start_position[i][1]),0, s.set);
             guardWaypoints[i] = new List<Waypoint>();
@@ -534,13 +628,13 @@ class Utils
         //Generate subsets
         foreach (var c in interestPoints)
         {
-            Set s = pointsInSight(c, r, interestPoints, interestPointsUnseen, map.polygons);
+            Set s = pointsInSight(c, map.sensor_range, interestPoints, interestPointsUnseen, map.polygons);
             //s.getVisiblePointsFromPath(guardCurrentPositions, interestPoints, interestPointsUnseen, r, map.polygons);
             subsets.Add(s);
         }
 
         //While whole set isn't covered
-        while (interestPointsUnseen.Count >= 1 && runs<100)
+        while (interestPointsUnseen.Count >= 1 && runs<30)
         {
             Debug.Log("Total Interest points to see: " + interestPoints.Length);
             Debug.Log("left Interest points to see: "+ interestPointsUnseen.Count);
@@ -556,30 +650,57 @@ class Utils
             }
 
             //Run weighted greedy and get new guard position
-            newGuardPositions = weightedGreedy(subsets, guardCurrentPositions,map.polygons);
+            newGuardPositions = weightedGreedy2(subsets, guardCurrentPositions,map.polygons,map.sensor_range,interestPoints,max_speed);
             if (newGuardPositions == null)
                 break;
+            int h=-1;
             for (int i = 0; i < numberofGuards; i++)
             {
-                    guardCurrentPositions[i] = newGuardPositions[i];
-                    //Debug.Log("Guard: " + i + " moved to (" + newGuardPositions[i].point[0] + "," + newGuardPositions[i].point[1] + ")");
-                    //Debug.Log("Saw: " + newGuardPositions[i].set.Count);
-                    //Remove the new seen points from the unseenpoints
-                    //interestPointsUnseen = removeSeenPoints(newGuardPositions[i].set, interestPointsUnseen);
-                    interestPointsUnseen = removeSeenPointsFromPath(guardCurrentPositions[i], newGuardPositions[i].point, interestPoints, interestPointsUnseen, r, map.polygons);
+                //Debug.Log("Guard: " + i + " moved to (" + newGuardPositions[i].point[0] + "," + newGuardPositions[i].point[1] + ")");
+                //Debug.Log("Saw: " + newGuardPositions[i].set.Count);
+                //Remove the new seen points from the unseenpoints
+                //interestPointsUnseen = removeSeenPoints(newGuardPositions[i].set, interestPointsUnseen);
+                if (guardCurrentPositions[i].point != newGuardPositions[i].point)
+                {
+                    h = i;
+                    Debug.Log("Guard " + i + " moved");
+                    interestPointsUnseen = removeSeenPointsFromPath(guardCurrentPositions[i], newGuardPositions[i].point, interestPoints, interestPointsUnseen, map.sensor_range, map.polygons);
+                    //guardCurrentPositions[i] = newGuardPositions[i];
+                }
             }
-            guardCurrentPositions = newGuardPositions;
+            guardCurrentPositions = (Waypoint[])newGuardPositions.Clone();
+            guardWaypoints[h].Add(guardCurrentPositions[h]);
 
-            for (int i = 0; i < numberofGuards; i++)
-            {
-                guardWaypoints[i].Add(guardCurrentPositions[i]);
-            }
+            //for (int i = 0; i < numberofGuards; i++)
+            //{
+            //    guardWaypoints[i].Add(guardCurrentPositions[i]);
+            //}
             runs++;
+        }
+        for(int i = 0; i < guardWaypoints.Length; i++)
+        {
+            string s1 = "Guard "+i+": ";
+            string s2 = "Guard " + i + ": ";
+            for (int j = 0; j < guardWaypoints[i].Count; j++)
+            {
+                s1 += guardWaypoints[i][j].time+", ";
+                s2 += guardWaypoints[i][j].point + ", ";
+
+            }
+            Debug.Log(s1);
+            Debug.Log(s2);
+
+        }
+        float totalTime = 0;
+        for (int i = 0; i < guardWaypoints.Length; i++)
+        {
+            if (guardWaypoints[i].Last().time > totalTime)
+                totalTime = guardWaypoints[i].Last().time;
         }
         Debug.Log("Final: Total Interest points to see: " + interestPoints.Length);
         Debug.Log("Final: left Interest points to see: " + interestPointsUnseen.Count);
         Debug.Log("Runs: " + runs);
-
+        Debug.Log("Task completed in: " + totalTime);
         return new Datastruct(guardWaypoints, subsets);
     }
 
