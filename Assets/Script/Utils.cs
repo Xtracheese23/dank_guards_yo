@@ -704,6 +704,153 @@ class Utils
         return new Datastruct(guardWaypoints, subsets);
     }
 
+    public static Datastruct getPositionsT4(float[][] items, int numberofGuards, Map map, float[][] start_position, float[][] end_position, float max_speed)
+    {
+        Vector2[] interestPoints = new Vector2[items.Length];
+        List<int> interestPointsUnseen = new List<int>();
+        List<Set> subsets = new List<Set>();
+        List<Waypoint>[] guardWaypoints = new List<Waypoint>[numberofGuards];
+        Waypoint[] guardCurrentPositions = new Waypoint[numberofGuards];
+        Waypoint[] newGuardPositions = new Waypoint[numberofGuards];
+        int runs = 0;
+
+        // Initialize items
+        for (int i = 0; i < items.Length; i++)
+        {
+            interestPoints[i] = new Vector2(items[i][0], items[i][1]);
+            interestPointsUnseen.Add(i);
+
+        }
+
+        //Initialize position of the guards and remove initial points that are seen and points that will be seen at the end
+        for (int i = 0; i < numberofGuards; i++)
+        {
+            Vector2 c_start = new Vector2(start_position[i][0], start_position[i][1]);
+            Vector2 c_end = new Vector2(end_position[i][0], end_position[i][1]);
+            Set s_start = pointsInSight(c_start, map.sensor_range, interestPoints, map.polygons);
+            Set s_end = pointsInSight(c_end, map.sensor_range, interestPoints, map.polygons);
+            interestPointsUnseen = removeSeenPoints(s_start.set, interestPointsUnseen);
+            interestPointsUnseen = removeSeenPoints(s_end.set, interestPointsUnseen);
+
+            Waypoint w = new Waypoint(new Vector2(start_position[i][0], start_position[i][1]), 0, s_start.set);
+            guardWaypoints[i] = new List<Waypoint>();
+            guardWaypoints[i].Add(w);
+            guardCurrentPositions[i] = w;
+        }
+
+        //Generate subsets
+        foreach (var c in interestPoints)
+        {
+            Set s = pointsInSight(c, map.sensor_range, interestPoints, interestPointsUnseen, map.polygons);
+            //s.getVisiblePointsFromPath(guardCurrentPositions, interestPoints, interestPointsUnseen, r, map.polygons);
+            subsets.Add(s);
+        }
+
+        //While whole set isn't covered
+        while (interestPointsUnseen.Count >= 1 && runs < 50)
+        {
+            Debug.Log("Total Interest points to see: " + interestPoints.Length);
+            Debug.Log("left Interest points to see: " + interestPointsUnseen.Count);
+
+            for (int i = 0; i < numberofGuards; i++)
+            {
+                guardCurrentPositions[i] = guardWaypoints[i].Last();
+            }
+            //Update distance from each subset to the closest guard
+            foreach (Set s in subsets)
+            {
+                s.updateSetScores(guardCurrentPositions, map.polygons);
+            }
+
+            //Run weighted greedy and get new guard position
+            newGuardPositions = weightedGreedy2(subsets, guardCurrentPositions, map.polygons, map.sensor_range, interestPoints, max_speed);
+            if (newGuardPositions == null)
+                break;
+            int h = -1;
+            for (int i = 0; i < numberofGuards; i++)
+            {
+                if (guardCurrentPositions[i].point != newGuardPositions[i].point)
+                {
+                    h = i;
+                    Debug.Log("Guard " + i + " moved");
+                    interestPointsUnseen = removeSeenPointsFromPath(guardCurrentPositions[i], newGuardPositions[i].point, interestPoints, interestPointsUnseen, map.sensor_range, map.polygons);
+                }
+            }
+            guardCurrentPositions = (Waypoint[])newGuardPositions.Clone();
+            guardWaypoints[h].Add(guardCurrentPositions[h]);
+            runs++;
+        }
+
+        //guardWaypoints = findEndPositions(end_position, guardWaypoints);
+
+        for (int i = 0; i < numberofGuards; i++)
+        {
+            Vector2 c_end = new Vector2(end_position[i][0], end_position[i][1]);
+            Set s_end = pointsInSight(c_end, map.sensor_range, interestPoints, map.polygons);
+
+            Waypoint w = new Waypoint(c_end, Vector2.Distance(c_end,guardWaypoints[i].Last().point)/max_speed, s_end.set);
+            guardWaypoints[i].Add(w);
+        }
+
+        for (int i = 0; i < guardWaypoints.Length; i++)
+        {
+            string s1 = "Guard " + i + ": ";
+            string s2 = "Guard " + i + ": ";
+            for (int j = 0; j < guardWaypoints[i].Count; j++)
+            {
+                s1 += guardWaypoints[i][j].time + ", ";
+                s2 += guardWaypoints[i][j].point + ", ";
+
+            }
+            Debug.Log(s1);
+            Debug.Log(s2);
+
+        }
+        float totalTime = 0;
+        for (int i = 0; i < guardWaypoints.Length; i++)
+        {
+            if (guardWaypoints[i].Last().time > totalTime)
+                totalTime = guardWaypoints[i].Last().time;
+        }
+        Debug.Log("Final: Total Interest points to see: " + interestPoints.Length);
+        Debug.Log("Final: left Interest points to see: " + interestPointsUnseen.Count);
+        Debug.Log("Runs: " + runs);
+        Debug.Log("Task completed in: " + totalTime);
+        return new Datastruct(guardWaypoints, subsets);
+    }
+
+
+    public static List<Waypoint>[] findEndPositions(float[][] end_position, List<Waypoint>[] guardWaypoints,float max_speed)
+    {
+        List<Waypoint>[] newGuardWaypoints = (List<Waypoint>[])guardWaypoints.Clone();
+        int n = guardWaypoints.Length;
+        int bestRow = -1;
+        float totalTime = Mathf.Infinity;
+        float[][] dist = new float[n][];
+        for (int i = 0; i < n; i++)
+        {
+            dist[i] = new float[n];
+        }
+
+        for (int i = 0; i < n; i++)
+        {
+            Vector2 endVector = new Vector2(end_position[i][0], end_position[i][1]);
+            for (int j = 0; j < n; j++)
+            {
+                dist[i][j] = Vector2.Distance(endVector, guardWaypoints[j].Last().point)/max_speed;
+            }
+        }
+        for (int i = 0; i < n; i++)
+        {
+            if(dist[i].Max()< totalTime)
+            {
+                totalTime = dist[i].Max();
+                bestRow = i;
+            }
+        }
+
+         return newGuardWaypoints;
+    }
     // Tree Greedy, NOT USED FOR NOW
     /*
     public static Set[] findNBestSetsUsingGreedy2(List<Set> subsets, int N)

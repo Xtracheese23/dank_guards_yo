@@ -61,7 +61,7 @@ public class GameManager : MonoBehaviour {
                 }
             }
         }
-        else if (task == 2)
+        else if (task == 2 || task == 4)
         {
             for (int i = 0; i < numberofGuards; i++)
             {
@@ -71,7 +71,11 @@ public class GameManager : MonoBehaviour {
                     
                     Gizmos.color = Color.blue;
                     Gizmos.DrawCube(new Vector3(point[i].startPos[0], point[i].startPos[1], 2), new Vector3(0.5F, 0.5F, 0));
-                    //Gizmos.DrawCube(new Vector3(point[i].goalPos[0], point[i].goalPos[1], 2), new Vector3(0.5F, 0.5F, 0));
+                    if(task == 4)
+                    {
+                        Gizmos.color = Color.red;
+                        Gizmos.DrawCube(new Vector3(point[i].goalPos[0], point[i].goalPos[1], 2), new Vector3(0.5F, 0.5F, 0));
+                    }
                     List<float[]> unseenitems = new List<float[]>();
                     unseenitems.AddRange(map.items);
 
@@ -326,6 +330,8 @@ public class GameManager : MonoBehaviour {
         }
         else if (task == 2)
             data = Utils.getPositionsT2(items, numberofGuards, map, start_positions, input.v_max);
+        else if (task == 4)
+            data = Utils.getPositionsT4(items, numberofGuards, map, start_positions, end_positions,input.v_max);
 
         //Create players
 
@@ -354,7 +360,7 @@ public class GameManager : MonoBehaviour {
 
             point[i].polygons = inputPolygon;
 
-            if (task == 2)
+            if (task == 2 || task == 4)
             {
                 point[i].waypoint = data.waypoints[i];
             }
