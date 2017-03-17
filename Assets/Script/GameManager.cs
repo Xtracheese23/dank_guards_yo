@@ -19,8 +19,9 @@ public class GameManager : MonoBehaviour {
     public Datastruct data;
     public bool useSaved;
     public string problem;
-    private int numberofGuards;
+    public static int numberofGuards;
     private int itemcount;
+    public static float[] dist;
 
     private void OnDrawGizmos()
     {
@@ -120,6 +121,26 @@ public class GameManager : MonoBehaviour {
                 }
             }
         }
+        else if (task == 5)
+        {
+            for (int i = 0; i < numberofGuards; i++)
+            {
+                if (point[i])
+                {
+                    //Gizmos.color = Color.blue;
+
+                    Gizmos.color = Color.blue;
+                    Gizmos.DrawCube(new Vector3(point[i].startPos[0], point[i].startPos[1], 2), new Vector3(0.5F, 0.5F, 0));
+                    Gizmos.color = Color.yellow;
+                    Gizmos.DrawCube(new Vector3(point[i].goalPos[0], point[i].goalPos[1], 2), new Vector3(0.5F, 0.5F, 0));
+                    //Gizmos.DrawIcon(new Vector3(point[i].goalPos[0], point[i].goalPos[1], 0), "doughnut.tif", false);
+
+                    List<float[]> unseenitems = new List<float[]>();
+                    unseenitems.AddRange(map.items);
+
+                }
+            }
+        }
 
     }
 
@@ -133,10 +154,11 @@ public class GameManager : MonoBehaviour {
         point = point ? point : player.GetComponent<KinematicPoint>();
         point = point ? point : player.GetComponent<StaticGuard>();
         point = point ? point : player.GetComponent<KinematicGuard>();
+        point = point ? point : player.GetComponent<DynamicGuard>();
         return point;
     }
 
-    Point CreateAI2()
+    /*Point CreateAI2()
     {
 
         var player = Instantiate(ai, new Vector3(2, 2, -9), new Quaternion(0, 0, 0, 1));   //why can I not just set transform.position to what I want?
@@ -147,7 +169,7 @@ public class GameManager : MonoBehaviour {
         point = point ? point : player.GetComponent<StaticGuard>();
         point = point ? point : player.GetComponent<KinematicGuard>();
         return point;
-    }
+    }*/
 
     Map CreateMap()
     {
@@ -340,7 +362,7 @@ public class GameManager : MonoBehaviour {
         {
             Debug.Log("Guard Number: " + i);
             point[i] = CreateAI();
-
+            point[i].name = ("Guard" + i);
             //point[i].useSaved = useSaved;
 
             //point[i].startPos = input.start_pos; //need to update for multiple
@@ -364,6 +386,24 @@ public class GameManager : MonoBehaviour {
             {
                 point[i].waypoint = data.waypoints[i];
             }
+            if (task == 5)
+            {
+                point[i].startVel = input.start_vel;
+                point[i].goalVel = input.goal_vel;
+                point[i].boundaryPolygon = boundaryPolygon;
+            }
+        }
+        for (int i = 0; i < numberofGuards; i++)
+        {
+            for (int j = 0; j < numberofGuards; j++)
+            {
+                if (j != i)
+                {
+                    var x = point[j].goalPos[0] - point[i].goalPos[0];
+                    var y = point[j].goalPos[1] - point[i].goalPos[1];
+                    point[i].formation.Add(new Vector2(x, y));
+                }
+            }
         }
 
 
@@ -371,11 +411,27 @@ public class GameManager : MonoBehaviour {
 
         //Cheetah.instance.CreateOrLoad(problem, boundaryPolygon, inputPolygon);
 
-    }
-	
-	// Update is called once per frame
-	void Update () {
-        
+        if (UnityEditor.SceneView.sceneViews.Count > 0)
+        {
+            UnityEditor.SceneView sceneView = (UnityEditor.SceneView)UnityEditor.SceneView.sceneViews[0];
+            sceneView.Focus();
+        }
 
+    }
+
+    // Update is called once per frame
+    private float totalTime = 0F;
+    private float[] error = new float[numberofGuards];
+    void Update()
+    {
+        //error
+        totalTime += Time.deltaTime;
+        Debug.Log("Time Elapsed: " + totalTime);
+
+        if (UnityEditor.SceneView.sceneViews.Count > 0)
+        {
+            UnityEditor.SceneView sceneView = (UnityEditor.SceneView)UnityEditor.SceneView.sceneViews[0];
+            sceneView.Focus();
+        }
     }
 }
