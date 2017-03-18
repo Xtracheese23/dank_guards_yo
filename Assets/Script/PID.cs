@@ -1,26 +1,20 @@
-﻿[System.Serializable]
-public class PID
-{
-    public float pFactor, iFactor, dFactor;
+﻿using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
 
-    float integral;
-    float lastError;
+public class PID : MonoBehaviour {
+    private float integral = 0F;
+    private float prev_error = 0F;
+    private float Kp, Ki, Kd;
 
-
-    public PID(float pFactor, float iFactor, float dFactor)
+    float PIDs(float error)
     {
-        this.pFactor = pFactor;
-        this.iFactor = iFactor;
-        this.dFactor = dFactor;
+        integral += integral + (error * Time.deltaTime);
+        var derivative = (error - prev_error) / Time.deltaTime;
+        var output = Kp * error + Ki * integral + Kd * derivative;
+        prev_error = error;
+        //sleep(iteration_time)
+        return output;
     }
 
-
-    public float Update(float setpoint, float actual, float timeFrame)
-    {
-        float present = setpoint - actual;
-        integral += present * timeFrame;
-        float deriv = (present - lastError) / timeFrame;
-        lastError = present;
-        return present * pFactor + integral * iFactor + deriv * dFactor;
-    }
 }

@@ -58,7 +58,7 @@ public class T5_InfoBoard : MonoBehaviour
                 //need to subtract the ideal distance
                 terror = Mathf.Abs(terror) - idealdist;
                 terror = Mathf.Pow(terror, 2) * Time.deltaTime;
-                Debug.Log("terror: " + terror);
+                //Debug.Log("terror: " + terror);
                 err += terror;
             }
         }
@@ -79,7 +79,7 @@ public class T5_InfoBoard : MonoBehaviour
 
         numberofGuards = GameManager.numberofGuards;
         totalError += FormationError();
-        Debug.Log("error: " + totalError);
+        //Debug.Log("error: " + totalError);
         info.text += ("\ne: " + ParseFloat(totalError));
 
         totalcost = totalTime + totalError;

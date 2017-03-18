@@ -214,13 +214,13 @@ MonoBehaviour:
     m_BestFit: 0
     m_MinSize: 0
     m_MaxSize: 40
-    m_Alignment: 3
+    m_Alignment: 0
     m_AlignByGeometry: 0
     m_RichText: 1
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 1
     m_LineSpacing: 1
-  m_Text: Test
+  m_Text: 
 --- !u!222 &620976498
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -262,6 +262,10 @@ MonoBehaviour:
   mapai: {fileID: 1785505170316712, guid: 9b95125bb66c93440b0534a204ed21fe, type: 2}
   camera: {fileID: 1665364587}
   task: 5
+  Kp: 1
+  Ki: 0.1
+  Kd: 0.2
+  endRange: 2
   useSaved: 0
   problem: problem_A5_2.json
 --- !u!4 &946960906

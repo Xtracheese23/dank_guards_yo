@@ -15,6 +15,8 @@ public class GameManager : MonoBehaviour {
     public GameObject mapai;
     public GameObject camera;
     public int task = 2;
+    public float Kp, Ki, Kd;
+    public static float endRange = 2;
 
     public Datastruct data;
     public bool useSaved;
@@ -391,6 +393,9 @@ public class GameManager : MonoBehaviour {
                 point[i].startVel = input.start_vel;
                 point[i].goalVel = input.goal_vel;
                 point[i].boundaryPolygon = boundaryPolygon;
+                point[i].Kp = Kp;
+                point[i].Ki = Ki;
+                point[i].Kd = Kd;
             }
         }
         for (int i = 0; i < numberofGuards; i++)
@@ -426,7 +431,7 @@ public class GameManager : MonoBehaviour {
     {
         //error
         totalTime += Time.deltaTime;
-        Debug.Log("Time Elapsed: " + totalTime);
+        //Debug.Log("Time Elapsed: " + totalTime);
 
         if (UnityEditor.SceneView.sceneViews.Count > 0)
         {

@@ -20,4 +20,5 @@ public class Point : MonoBehaviour
     public List<Waypoint> waypoint;
     public List<Vector2> formation; //goes from guard 0 - 4, skipping itself
     public Vector2 formationError;
+    public float Kp, Kd, Ki;
 }
