@@ -149,14 +149,16 @@ public class DynamicGuard : Point
 
     float PIDs(float error, int connection, int xy, bool rush) //0 = x, 1 = y
     {
-        if (!rush)
+        if (!rush && Ki > 0)
         {
             if (error < 1)
                 integral[connection][xy] = 0F;
-            integral[connection][xy] += integral[connection][xy] + (error * Time.deltaTime);
+            integral[connection][xy] += integral[connection][xy] + (error * Time.deltaTime)/10000;
+            if (integral[connection][xy] == Mathf.Infinity)
+                integral[connection][xy] = 0F;
         }
         var derivative = (error - prev_error[connection][xy]) / Time.deltaTime;
-        var output = Kp * error + Ki * integral[connection][xy] + Kd * derivative;
+        var output = Kp * error + Ki * integral[connection][xy] * 10000 + Kd * derivative;
         prev_error[connection][xy] = error;
         return output;
     }
@@ -186,8 +188,8 @@ public class DynamicGuard : Point
         //Debug.Log("Guard ID: " + guardID + ", Error: " + Mathf.Sqrt(Mathf.Pow(obsavoid.x,2) + Mathf.Pow(obsavoid.y,2)));
         //Debug.Log("Guard: "+guardID+" Edge: (" + edgeavoid.x +", "+edgeavoid.y +")");
 
-        var x = goalcomp.x + formcomp.x + obsavoid.x + edgeavoid.x;
-        var y = goalcomp.y + formcomp.y + obsavoid.y + edgeavoid.y;
+        var x = goalcomp.x + formcomp.x*20 + obsavoid.x + edgeavoid.x;
+        var y = goalcomp.y + formcomp.y * 20 + obsavoid.y + edgeavoid.y;
 
         var acc = new Vector2(x, y);
         if (acc.magnitude > MAX_ACCEL)
@@ -323,7 +325,7 @@ public class DynamicGuard : Point
         var dt = Time.deltaTime;
 
         var t_col = this.vel.magnitude / MAX_ACCEL;
-        var d = vel.magnitude * dt - MAX_ACCEL * dt * dt * 0.5;
+        var d = Mathf.Abs(vel.magnitude) * dt - MAX_ACCEL * dt * dt * 0.5;
 
         float dist = Mathf.Infinity;
         if (!collision)
@@ -361,13 +363,15 @@ public class DynamicGuard : Point
                 }
 
             }
-            if (dist < d + 1)
+            if (dist < d + 1 && Vector2.Dot(vel, dirn) < 0)
             {
                 collision = true;
                 t_dur = t_col;
                 t_run = 0;
                 coll_acc = dirn;
                 Debug.Log("COLLISION IMMINANT: GUARD " + guardID);
+                Debug.Log("d: " + d + ", dist: " + dist + ", velmag: " + vel.magnitude );
+                Debug.Log("dirn: " + Vector2.Dot(vel, dirn));
             }
         }
         if (t_run > t_dur)
