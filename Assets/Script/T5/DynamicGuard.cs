@@ -188,8 +188,8 @@ public class DynamicGuard : Point
         //Debug.Log("Guard ID: " + guardID + ", Error: " + Mathf.Sqrt(Mathf.Pow(obsavoid.x,2) + Mathf.Pow(obsavoid.y,2)));
         //Debug.Log("Guard: "+guardID+" Edge: (" + edgeavoid.x +", "+edgeavoid.y +")");
 
-        var x = goalcomp.x + formcomp.x*20 + obsavoid.x + edgeavoid.x;
-        var y = goalcomp.y + formcomp.y * 20 + obsavoid.y + edgeavoid.y;
+        var x = goalcomp.x + formcomp.x * 20;// + obsavoid.x + edgeavoid.x;
+        var y = goalcomp.y + formcomp.y * 20;// + obsavoid.y + edgeavoid.y;
 
         var acc = new Vector2(x, y);
         if (acc.magnitude > MAX_ACCEL)
@@ -219,8 +219,8 @@ public class DynamicGuard : Point
         var obsavoid = ObstacleAvoid();
         var edgeavoid = AvoidWalls();
 
-        var x = formcomp.x + edgeavoid.x; // + obsavoid.x;// + edgeavoid.x;
-        var y = formcomp.y + edgeavoid.y;// + obsavoid.y;// + edgeavoid.y;
+        var x = formcomp.x;// + edgeavoid.x; // + obsavoid.x;// + edgeavoid.x;
+        var y = formcomp.y;// + edgeavoid.y;// + obsavoid.y;// + edgeavoid.y;
 
         var acc = new Vector2(x, y);
         if (acc.magnitude > MAX_ACCEL)
@@ -327,9 +327,10 @@ public class DynamicGuard : Point
         var t_col = this.vel.magnitude / MAX_ACCEL;
         var d = Mathf.Abs(vel.magnitude) * t_col - MAX_ACCEL * t_col * t_col * 0.5;
 
-        var t_2col = this.vel.magnitude / (Mathf.Sqrt(MAX_ACCEL));
+        var t_2col = this.vel.magnitude / (Mathf.Sqrt(MAX_ACCEL));  //assumes that polygons are not more than a 90 degree angle
         var d_2poly = Mathf.Abs(vel.magnitude) * t_col - MAX_ACCEL * t_col * t_col * 0.5;
         int poly_colnumber = 0;
+        var sign = 1;
         Vector2[] dir_2poly = new Vector2[2];
 
 
@@ -337,8 +338,18 @@ public class DynamicGuard : Point
         if (!collision)
         { 
             var dirn = new Vector2(Mathf.Infinity, Mathf.Infinity);
-            foreach (var poly in this.polygons)
+            //foreach (var poly in this.polygons)
+            for(int p = 0; p < polygons.Length+1; p++)
             {
+                Vector2[] poly;
+                if (p < polygons.Length)
+                    poly = polygons[p];
+                else
+                {
+                    poly = boundaryPolygon;
+                    sign = -1;
+
+                }
                 for (int i = 0; i < poly.Length; i++)   //each poly defines a new polygon, only need to return closest side
                 {
                     int j = (i + 1)% poly.Length;
@@ -350,7 +361,6 @@ public class DynamicGuard : Point
                         dirp.Normalize();
                         dirp *= MAX_ACCEL;
                         dir_2poly[poly_colnumber] = dirp;
-                        Debug.Log("Polycount" + poly_colnumber);
                         poly_colnumber++;
                         if (poly_colnumber > 1)
                             break;
@@ -370,9 +380,9 @@ public class DynamicGuard : Point
                         else
                         {
                             dirn = new Vector2(poly[j][1] - poly[i][1], poly[i][0] - poly[j][0]); //This is backwards. It works and I don't know why
-                            dirn.Normalize();
-                            dirn *= MAX_ACCEL;
                         }
+                        dirn.Normalize();
+                        dirn *= MAX_ACCEL * sign;
                     }
                 }
                 if (poly_colnumber > 1)
@@ -384,11 +394,13 @@ public class DynamicGuard : Point
                     dirn.Normalize();
                     dirn *= MAX_ACCEL;
                     coll_acc = dirn;
-                    Debug.Log("TWO COLLISIONS IMMINANT! FUCK! guard " + guardID);
+                    Debug.Log("TWO COLLISIONS IMMINANT! FUCK!");
+                    Debug.Log("btw the guard is number " + guardID);
                     break;
                 }
             }
-            if (dist < d + 1 && Vector2.Dot(vel, dirn) < 0)
+            //Debug.Log("dist: " + dist + " Guard: " + guardID);
+            if (dist < d + 0.5 && Vector2.Dot(vel, dirn) < 0)
             {
                 collision = true;
                 t_dur = t_col;
