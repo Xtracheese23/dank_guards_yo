@@ -325,7 +325,13 @@ public class DynamicGuard : Point
         var dt = Time.deltaTime;
 
         var t_col = this.vel.magnitude / MAX_ACCEL;
-        var d = Mathf.Abs(vel.magnitude) * dt - MAX_ACCEL * dt * dt * 0.5;
+        var d = Mathf.Abs(vel.magnitude) * t_col - MAX_ACCEL * t_col * t_col * 0.5;
+
+        var t_2col = this.vel.magnitude / (Mathf.Sqrt(MAX_ACCEL));
+        var d_2poly = Mathf.Abs(vel.magnitude) * t_col - MAX_ACCEL * t_col * t_col * 0.5;
+        int poly_colnumber = 0;
+        Vector2[] dir_2poly = new Vector2[2];
+
 
         float dist = Mathf.Infinity;
         if (!collision)
@@ -336,13 +342,21 @@ public class DynamicGuard : Point
                 for (int i = 0; i < poly.Length; i++)   //each poly defines a new polygon, only need to return closest side
                 {
                     int j = (i + 1)% poly.Length;
-                    //if (j >= poly.Length)
-                    //{
-                    //    j = 0;  //hax
-                    //}
                     var closestpnt = ClosestPointOnLine(new Vector3(poly[i][0], poly[i][1], 0F), new Vector3(poly[j][0], poly[j][1], 0F), transform.position);
                     var dist2 = Vector2.Distance(transform.position, closestpnt);
-                    if (dist2 < dist)
+                    if(dist2 < d_2poly) //might have collisions with two polygons
+                    {
+                        var dirp = new Vector2(poly[j][1] - poly[i][1], poly[i][0] - poly[j][0]); //This is backwards. It works and I don't know why
+                        dirp.Normalize();
+                        dirp *= MAX_ACCEL;
+                        dir_2poly[poly_colnumber] = dirp;
+                        Debug.Log("Polycount" + poly_colnumber);
+                        poly_colnumber++;
+                        if (poly_colnumber > 1)
+                            break;
+                    }
+
+                    if (dist2 < dist)  //check shortest distance
                     {
                         dist = dist2;
                         if (closestpnt == new Vector3(poly[i][0], poly[i][1], 0F))  //if closest point is the vertices, it is not between the vertices
@@ -361,7 +375,18 @@ public class DynamicGuard : Point
                         }
                     }
                 }
-
+                if (poly_colnumber > 1)
+                {
+                    collision = true;
+                    t_dur = t_2col;
+                    t_run = 0;
+                    dirn = dir_2poly[0] + dir_2poly[1];
+                    dirn.Normalize();
+                    dirn *= MAX_ACCEL;
+                    coll_acc = dirn;
+                    Debug.Log("TWO COLLISIONS IMMINANT! FUCK! guard " + guardID);
+                    break;
+                }
             }
             if (dist < d + 1 && Vector2.Dot(vel, dirn) < 0)
             {
@@ -369,9 +394,9 @@ public class DynamicGuard : Point
                 t_dur = t_col;
                 t_run = 0;
                 coll_acc = dirn;
-                Debug.Log("COLLISION IMMINANT: GUARD " + guardID);
-                Debug.Log("d: " + d + ", dist: " + dist + ", velmag: " + vel.magnitude );
-                Debug.Log("dirn: " + Vector2.Dot(vel, dirn));
+                //Debug.Log("COLLISION IMMINANT: GUARD " + guardID);
+                //Debug.Log("d: " + d + ", dist: " + dist + ", velmag: " + vel.magnitude );
+                //Debug.Log("dirn: " + Vector2.Dot(vel, dirn));
             }
         }
         if (t_run > t_dur)
