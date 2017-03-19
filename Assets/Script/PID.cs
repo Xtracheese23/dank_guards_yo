@@ -3,11 +3,19 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class PID : MonoBehaviour {
+
+    public static float error = 0F;
     private float integral = 0F;
     private float prev_error = 0F;
-    private float Kp, Ki, Kd;
+    public static float Kp, Ki, Kd;
+    public static float correction;
+    //public PID()
 
-    float PIDs(float error)
+    private void Update()
+    {
+        correction = PIDs();
+    }
+    float PIDs()
     {
         integral += integral + (error * Time.deltaTime);
         var derivative = (error - prev_error) / Time.deltaTime;

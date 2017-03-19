@@ -14,6 +14,10 @@ public class DynamicGuard : Point
     private Vector2 acc;
     private float vox, voy;
     private PID[] pid;
+    private bool collision = false;
+    private float t_run = 0F;
+    private float t_dur = 0F;
+    private Vector2 coll_acc;
     /*private Vector2 acc = new Vector2();
 
     private void OnDrawGizmos()
@@ -58,10 +62,10 @@ public class DynamicGuard : Point
                 }                                 
             }
             if (dirn.x !=0)
-                dirn.x = Mathf.Pow(20 / dirn.x, 2); 
+                dirn.x = Mathf.Pow(5 / dirn.x, 2); 
 
             if (dirn.y != 0)
-                dirn.y = Mathf.Pow(20 / dirn.y, 2);
+                dirn.y = Mathf.Pow(5 / dirn.y, 2);
             avoid += dirn;
         }
         return avoid;
@@ -120,6 +124,8 @@ public class DynamicGuard : Point
                 x += (pos.x - this.transform.position.x) - this.formation[i-j].x;
                 y += (pos.y - this.transform.position.y) - this.formation[i-j].y;
 
+                //PID fubar = new PID();
+                //fubar.error;
                 //Debug.Log("x Error between " + this.guardID + " and " + i + " is " + x);
                 //Debug.Log("y Error between " + this.guardID + " and " + i + " is " + y);
             }
@@ -128,6 +134,29 @@ public class DynamicGuard : Point
         return formationError;
     }
 
+    void InitiatePIDs()
+    {
+        pid = new PID[this.formation.Count+1];
+        float errx = 0, erry = 0;
+        int j = 0;
+        for (int i = 0; i < this.formation.Count + 1; i++) //9 max guards
+        {
+            if (i == this.guardID)
+            {
+                j++;    //hax
+                continue;
+            }
+            var gObj = GameObject.Find("Guard" + i);
+            if (gObj)
+            {
+                var pos = gObj.transform.position;
+                errx += (pos.x - this.transform.position.x) - this.formation[i - j].x;
+                erry += (pos.y - this.transform.position.y) - this.formation[i - j].y;
+
+                pid[i] = new PID();
+            }
+        }
+    }
 
     Vector3 GetInput()
     {
@@ -171,6 +200,7 @@ public class DynamicGuard : Point
     void Start()
     {
         vel = new Vector2(startVel[0], startVel[1]);
+        InitiatePIDs();
     }
 
     // Update is called once per frame
@@ -192,12 +222,91 @@ public class DynamicGuard : Point
         }
         else
         {
-            input = GetInput();
+            input = CollisionImminant();
+            if (!collision)
+            {
+                input = GetInput();
+            }
+            
         }
         
 
         transform.position = input;
     }
+
+
+    Vector3 CollisionImminant()
+    {
+        //bool collision = false;
+        var dt = Time.deltaTime;
+
+        var t_col = this.vel.magnitude / MAX_ACCEL;
+        var d = vel.magnitude * dt - MAX_ACCEL * dt * dt * 0.5;
+
+        float dist = Mathf.Infinity;
+        if (!collision)
+        { 
+            var dirn = new Vector2(Mathf.Infinity, Mathf.Infinity);
+            foreach (var poly in this.polygons)
+            {
+                for (int i = 0; i < poly.Length; i++)   //each poly defines a new polygon, only need to return closest side
+                {
+                    int j = (i + 1)% poly.Length;
+                    //if (j >= poly.Length)
+                    //{
+                    //    j = 0;  //hax
+                    //}
+                    var closestpnt = ClosestPointOnLine(new Vector3(poly[i][0], poly[i][1], 0F), new Vector3(poly[j][0], poly[j][1], 0F), transform.position);
+                    var dist2 = Vector2.Distance(transform.position, closestpnt);
+                    if (dist2 < dist)
+                    {
+                        dist = dist2;
+                        if (closestpnt == new Vector3(poly[i][0], poly[i][1], 0F))  //if closest point is the vertices, it is not between the vertices
+                        {
+                            dirn = new Vector2(this.transform.position.x - poly[i][0], this.transform.position.y - poly[i][1]);
+                            Debug.Log("1");
+                        }
+                        else if (closestpnt == new Vector3(poly[i][0], poly[i][1], 0F))  //if closest point is the vertices, it is not between the vertices
+                        {
+                            dirn = new Vector2(this.transform.position.x - poly[j][0], this.transform.position.y - poly[j][1]);
+                            Debug.Log("2");
+                        }
+                        else
+                        {
+                            dirn = new Vector2(poly[j][1] - poly[i][1], poly[i][0] - poly[j][0]); //This is backwards. It works and I don't know why
+                            dirn.Normalize();
+                            dirn *= MAX_ACCEL;
+                            Debug.Log("3");
+                        }
+                    }
+                }
+
+            }
+            if (dist < d + 1)
+            {
+                collision = true;
+                t_dur = t_col;
+                t_run = 0;
+                coll_acc = dirn;
+                Debug.Log("COLLISION IMMINANT: GUARD " + guardID);
+            }
+        }
+        if (t_run > t_dur)
+            collision = false;
+        if (collision) //can't do else, since we need to check this after the first point
+        {
+            vel += coll_acc * dt;
+            t_run += dt;
+            Debug.DrawLine(new Vector3(transform.position.x, transform.position.y, 20), new Vector3(transform.position.x + vel.x, transform.position.y + vel.y, 20), Color.blue);
+            Debug.DrawLine(new Vector3(transform.position.x, transform.position.y, 20), new Vector3(transform.position.x + coll_acc.x, transform.position.y + coll_acc.y, 20), Color.red);
+
+            return transform.position + new Vector3(vel.x, vel.y, 0F) * dt;
+        }
+        return new Vector3(0F, 0F, 0F);
+    }
+
+
+
 
 
 
