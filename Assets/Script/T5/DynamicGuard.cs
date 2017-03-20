@@ -59,7 +59,7 @@ public class DynamicGuard : Point
                     {
                         dirn = new Vector2(this.transform.position.x - poly[i][0], this.transform.position.y - poly[i][1]);
                     }
-                    else if (closestpnt == new Vector3(poly[i][0], poly[i][1], 0F))
+                    else if (closestpnt == new Vector3(poly[j][0], poly[j][1], 0F))
                     {
                         dirn = new Vector2(this.transform.position.x - poly[j][0], this.transform.position.y - poly[j][1]);
                     }
@@ -193,8 +193,8 @@ public class DynamicGuard : Point
         //Debug.Log("Guard ID: " + guardID + ", Error: " + Mathf.Sqrt(Mathf.Pow(obsavoid.x,2) + Mathf.Pow(obsavoid.y,2)));
         //Debug.Log("Guard: "+guardID+" Edge: (" + edgeavoid.x +", "+edgeavoid.y +")");
 
-        var x = goalcomp.x * goalMag + formcomp.x * formMag + obsavoid.x + edgeavoid.x;
-        var y = goalcomp.y * goalMag + formcomp.y * formMag + obsavoid.y + edgeavoid.y;
+        var x = goalcomp.x * goalMag + formcomp.x * formMag - obsavoid.x + edgeavoid.x;
+        var y = goalcomp.y * goalMag + formcomp.y * formMag - obsavoid.y + edgeavoid.y;
 
         var acc = new Vector2(x, y);
         if (acc.magnitude > MAX_ACCEL)
@@ -395,7 +395,7 @@ public class DynamicGuard : Point
                         {
                             dirn = new Vector2(this.transform.position.x - poly[i][0], this.transform.position.y - poly[i][1]);
                         }
-                        else if (closestpnt == new Vector3(poly[i][0], poly[i][1], 0F))  //if closest point is the vertices, it is not between the vertices
+                        else if (closestpnt == new Vector3(poly[j][0], poly[j][1], 0F))  //if closest point is the vertices, it is not between the vertices
                         {
                             dirn = new Vector2(this.transform.position.x - poly[j][0], this.transform.position.y - poly[j][1]); // might need to swap one of these
                         }
