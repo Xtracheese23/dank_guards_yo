@@ -265,8 +265,12 @@ MonoBehaviour:
   Kp: 1
   Ki: 0
   Kd: 0.2
+  goal: 1
+  form: 20
+  obs: 5
+  range: 2
   useSaved: 0
-  problem: problem_A5_2.json
+  problem: problem_A5_1.json
 --- !u!4 &946960906
 Transform:
   m_ObjectHideFlags: 0

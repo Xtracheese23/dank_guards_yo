@@ -19,6 +19,11 @@ public class DynamicGuard : Point
     private float t_dur = 0F;
     private Vector2 coll_acc;
     private bool initialRush = true;
+    public bool finished = false;
+    private float finalrad = 0;
+    public float goalMag = 1;
+    public float formMag = 20;
+    public float obsMultiplier = 3;
 
     private float[][] integral;
     private float[][] prev_error;
@@ -67,10 +72,10 @@ public class DynamicGuard : Point
                 }                                 
             }
             if (dirn.x !=0)
-                dirn.x = Mathf.Pow(5 / dirn.x, 2); 
+                dirn.x = Mathf.Pow(obsMultiplier / dirn.x, 2); 
 
             if (dirn.y != 0)
-                dirn.y = Mathf.Pow(5 / dirn.y, 2);
+                dirn.y = Mathf.Pow(obsMultiplier / dirn.y, 2);
             avoid += dirn;
         }
         return avoid;
@@ -94,10 +99,10 @@ public class DynamicGuard : Point
                 dirn *= dist2;
             }
             if (dirn.x != 0)
-                dirn.x = Mathf.Pow(20 / (dirn.x*10), 2);
+                dirn.x = Mathf.Pow(obsMultiplier / (dirn.x), 2);
 
             if (dirn.y != 0)
-                dirn.y = Mathf.Pow(20 / (dirn.y * 10), 2);
+                dirn.y = Mathf.Pow(obsMultiplier / (dirn.y), 2);
             avoid += dirn;
         }
         return avoid;
@@ -188,8 +193,8 @@ public class DynamicGuard : Point
         //Debug.Log("Guard ID: " + guardID + ", Error: " + Mathf.Sqrt(Mathf.Pow(obsavoid.x,2) + Mathf.Pow(obsavoid.y,2)));
         //Debug.Log("Guard: "+guardID+" Edge: (" + edgeavoid.x +", "+edgeavoid.y +")");
 
-        var x = goalcomp.x + formcomp.x * 20;// + obsavoid.x + edgeavoid.x;
-        var y = goalcomp.y + formcomp.y * 20;// + obsavoid.y + edgeavoid.y;
+        var x = goalcomp.x * goalMag + formcomp.x * formMag + obsavoid.x + edgeavoid.x;
+        var y = goalcomp.y * goalMag + formcomp.y * formMag + obsavoid.y + edgeavoid.y;
 
         var acc = new Vector2(x, y);
         if (acc.magnitude > MAX_ACCEL)
@@ -246,7 +251,7 @@ public class DynamicGuard : Point
     void Formcheck()
     {
         float x = 0, y = 0;
-        int j = 0, iteration = 0;
+        int j = 0;
         for (int i = 0; i < this.formation.Count + 1; i++) //9 max guards
         {
             if (i == this.guardID)
@@ -276,6 +281,9 @@ public class DynamicGuard : Point
     void Start()
     {
         vel = new Vector2(startVel[0], startVel[1]);
+        goalMag = GameManager.goalMag;
+        formMag = GameManager.formMag;
+        obsMultiplier = GameManager.obsMultiplier;
         InitiatePIDs();
     }
 
@@ -287,14 +295,28 @@ public class DynamicGuard : Point
         UpdatePosition();
     }
 
-
+    
     void UpdatePosition()
     {
         float time = totalTime;
         Vector3 input = new Vector3();
-        if (inFinalInput == true || Vector3.Distance(transform.position, new Vector3(goalPos[0], goalPos[1], transform.position.z)) < GameManager.endRange)
+        var distance = Vector3.Distance(transform.position, new Vector3(goalPos[0], goalPos[1], transform.position.z));
+        if (inFinalInput == true || distance < GameManager.endRange)
         {
-            input = getFinalInput();    //Final Input
+            if (distance < 0.01)
+                finished = true;
+            if (!finished)
+                input = getFinalInput();    //Final Input
+            else
+            {
+                input = transform.position;
+                var x = Mathf.Sin(finalrad);
+                var y = Mathf.Cos(finalrad);
+                Debug.DrawLine(transform.position, transform.position + 2 * new Vector3(x, y, 0F), Color.white);
+                Debug.DrawLine(transform.position, transform.position - 2 * new Vector3(x, y, 0F), Color.white);
+                finalrad += Time.deltaTime*10F;
+                finalrad %= 2F*Mathf.PI;
+            }
         }
         else
         {

@@ -16,7 +16,11 @@ public class GameManager : MonoBehaviour {
     public GameObject camera;
     public int task = 2;
     public float Kp, Ki, Kd;
+    public float goal = 1, form = 20, obs = 3, range = 2;
     public static float endRange = 2;
+    public static float goalMag = 1;
+    public static float formMag = 20;
+    public static float obsMultiplier = 3;
 
     public Datastruct data;
     public bool useSaved;
@@ -194,7 +198,12 @@ public class GameManager : MonoBehaviour {
     // Use this for initialization
     void Start ()
     {
-        colors = new Color[4];
+        goalMag = goal;
+        endRange = range;
+        formMag = form;
+        obsMultiplier = obs;
+
+    colors = new Color[4];
         colors[0] = Color.green;
         colors[1] = Color.cyan;
         colors[2] = Color.yellow;

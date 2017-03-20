@@ -12,7 +12,7 @@ public class T5_InfoBoard : MonoBehaviour
     private float totalError = 0F;
     private float totalcost = 0F;
     private int numberofGuards = 0;
-
+    private bool finished = false;
 
     string ParseFloat(float f)
     {
@@ -29,6 +29,7 @@ public class T5_InfoBoard : MonoBehaviour
     float FormationError()
     {
         float err = 0F;
+        int numberFin = 0;
         var pos = new Vector3[numberofGuards];
         var goalpos = new float[numberofGuards][];
         //var distances = new float[numberofGuards];
@@ -39,8 +40,12 @@ public class T5_InfoBoard : MonoBehaviour
             {
                 pos[i] = gObj.transform.position;
                 goalpos[i] = gObj.GetComponent<DynamicGuard>().goalPos;
+                if (Vector2.Distance(new Vector2(pos[i][0], pos[i][1]), new Vector2(goalpos[i][0], goalpos[i][1])) < 0.01F)
+                    numberFin++;
             }
         }
+        if (numberFin >= numberofGuards)
+            finished = true;
 
         float[] errarray = new float[numberofGuards];
         for (int i = 0; i < numberofGuards; i++)        //pos[i] = 0-3 (in order)
@@ -69,20 +74,24 @@ public class T5_InfoBoard : MonoBehaviour
     // Use this for initialization
     void Start()
     {
+        numberofGuards = GameManager.numberofGuards;
+        //finished = new bool[numberofGuards];
     }
 
     void Update()
     {
-        //error
-        totalTime += Time.deltaTime;
+        if (!finished)
+        {
+            totalTime += Time.deltaTime;
+            totalError += FormationError();
+            totalcost = totalTime + totalError;
+        }
+        
         info.text = ("t: " + ParseFloat(totalTime));
-
-        numberofGuards = GameManager.numberofGuards;
-        totalError += FormationError();
-        //Debug.Log("error: " + totalError);
+        
         info.text += ("\ne: " + ParseFloat(totalError));
 
-        totalcost = totalTime + totalError;
+        
         info.text += ("\nC: " + ParseFloat(totalcost));
     }
 
