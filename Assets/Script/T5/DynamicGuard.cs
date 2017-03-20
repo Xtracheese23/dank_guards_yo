@@ -307,6 +307,7 @@ public class DynamicGuard : Point
                 finished = true;
             if (!finished)
                 input = getFinalInput();    //Final Input
+                //input = getFinalInputOld();    //Final Input
             else
             {
                 input = transform.position;
@@ -474,7 +475,7 @@ public class DynamicGuard : Point
     }
 
 
-    Vector3 getFinalInput()
+    Vector3 getFinalInputOld()
     {
      
         if (inFinalInput == false)
@@ -519,6 +520,119 @@ public class DynamicGuard : Point
 
         return new Vector3(tx, ty, 0F);// * Time.deltaTime;
     }
+
+
+    private DubinInput input;
+    private int finalstatus = 0;
+    private float theta;
+    Vector3 getFinalInput()
+    {
+
+        if (inFinalInput == false)  //plan Dubins curves
+        {
+
+
+            //cost
+            var position = new float[] { transform.position.x, transform.position.y };
+            var velocity = new float[] { vel.x, vel.y };
+            var current = nodeToDubinNode(position, velocity);
+            var goal = nodeToDubinNode(goalPos, goalVel);
+            input = dubinInput(current, goal);
+            t_run = 0;
+            theta = current.theta;
+            inFinalInput = true;
+            Debug.Log("Enter Case 0, Guard: " + guardID + " Time: " + input.steer[0].time + " Omega: " + input.steer[0].omega);
+            //Debug.Break();
+        }
+        var dt = Time.deltaTime;
+        
+        switch (finalstatus)
+        {
+            case 0:
+                theta += input.steer[0].omega*dt;
+                t_run += dt;
+                vel.x = input.steer[0].v * Mathf.Cos(theta);
+                vel.y = input.steer[0].v * Mathf.Sin(theta);
+                //Debug.Break();
+                if (t_run >= input.steer[0].time)
+                {
+                    Debug.Log("Enter Case 1, Guard: " + guardID + " Time: " + input.steer[1].time + " Acc: " + input.steer[1].a);
+                    t_run = 0;
+                    finalstatus++;
+                    //Debug.Break();
+                }
+                break;
+            case 1:
+                theta += input.steer[1].omega * dt;
+                t_run += dt;
+                vel.x += Mathf.Cos(theta) * input.steer[1].a * dt;
+                vel.y += Mathf.Sin(theta) * input.steer[1].a * dt;
+                //Debug.Break();
+                if (t_run >= input.steer[1].time)
+                {
+                    t_run = 0;
+                    finalstatus++;
+                    Debug.Log("Enter Case 0, Guard: " + guardID + " Time: " + input.steer[0].time + " Omega: " + input.steer[0].omega);
+                    //Debug.Break();
+                }
+                break;
+            case 2:
+                theta += input.steer[2].omega * dt;
+                t_run += dt;
+                vel.x = input.steer[2].v * Mathf.Cos(theta);
+                vel.y = input.steer[2].v * Mathf.Sin(theta);
+                //Debug.Break();
+                if (t_run >= input.steer[2].time)
+                {
+                    Debug.Log("Finished! Guard: " + guardID);
+                    t_run = 0;
+                    finalstatus++;
+                    //Debug.Break();
+                }
+                break;
+            default:
+                vel.x = 0F;
+                vel.y = 0F;
+                finished = true;
+                break;
+        }
+
+        //var dt = Time.deltaTime;
+        float tx = transform.position.x, ty = transform.position.y;
+        tx = tx + vel.x * dt;// + acc.x * dt * dt * 0.5F;
+        ty = ty + vel.y * dt;// + acc.y * dt * dt * 0.5F;
+
+//        vel += acc * dt;
+        if (vel.magnitude > MAX_SPEED)
+        {
+            //Debug.Log("MAXIMUM VELOCITY FOR GUARD " + guardID);
+            //Debug.Log("...fuck");
+            vel.Normalize();
+            vel *= MAX_SPEED;
+        }
+
+        //we're feeding it position + acceleration componenent, which is wrong
+        Debug.DrawLine(new Vector3(transform.position.x, transform.position.y, 20), new Vector3(transform.position.x + vel.x, transform.position.y + vel.y, 20), Color.red);
+        Debug.DrawLine(new Vector3(transform.position.x, transform.position.y, 20), new Vector3(tx, ty, 20), Color.black);
+
+        return new Vector3(tx, ty, 0F);// * Time.deltaTime;
+    }
+
+    private DubinInput dubinInput(DubinNode near, DubinNode target)
+    {
+        return DubinUtils.DubinSP(new DubinState(near), new DubinState(target), true);
+    }
+
+    DubinNode nodeToDubinNode(float[] pos, float[] velo)
+    {
+        var theta = Mathf.Atan2(velo[1], velo[0]);
+        if (theta < 0)
+            theta += 2F * Mathf.PI;
+        var magni = new Vector2(velo[0], velo[1]).magnitude;
+        return new DubinNode(new Vector2(pos[0], pos[1]), magni, theta,
+            MAX_ACCEL / magni, 0F);
+    }
+
 }
 
 

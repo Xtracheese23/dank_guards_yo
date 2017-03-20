@@ -40,7 +40,9 @@ public class T5_InfoBoard : MonoBehaviour
             {
                 pos[i] = gObj.transform.position;
                 goalpos[i] = gObj.GetComponent<DynamicGuard>().goalPos;
-                if (Vector2.Distance(new Vector2(pos[i][0], pos[i][1]), new Vector2(goalpos[i][0], goalpos[i][1])) < 0.01F)
+                
+                //if (Vector2.Distance(new Vector2(pos[i][0], pos[i][1]), new Vector2(goalpos[i][0], goalpos[i][1])) < 0.01F)
+                if (gObj.GetComponent<DynamicGuard>().finished)
                     numberFin++;
             }
         }

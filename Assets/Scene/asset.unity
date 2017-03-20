@@ -266,9 +266,9 @@ MonoBehaviour:
   Ki: 0
   Kd: 0.2
   goal: 1
-  form: 20
-  obs: 0.005
-  range: 2
+  form: 50
+  obs: 0.01
+  range: 3
   useSaved: 0
   problem: problem_A5_2.json
 --- !u!4 &946960906

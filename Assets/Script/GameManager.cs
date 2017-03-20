@@ -430,7 +430,7 @@ public class GameManager : MonoBehaviour {
             UnityEditor.SceneView sceneView = (UnityEditor.SceneView)UnityEditor.SceneView.sceneViews[0];
             sceneView.Focus();
         }
-
+        Debug.Break();
 
     }
 
