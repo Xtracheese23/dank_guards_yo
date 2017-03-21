@@ -68,7 +68,6 @@ public class DynamicGuard : Point
                     }
                     dirn.Normalize();                       // ^ p2x - p1x, p1y - p2y
                     dirn *= Mathf.Pow(obsMultiplier / (dist), 2);
-                    //Debug.Log("dirn size " + dirn.magnitude + " dist " + dist);
                 }                                 
             }
             
