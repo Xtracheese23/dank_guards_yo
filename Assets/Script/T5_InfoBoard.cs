@@ -53,8 +53,10 @@ public class T5_InfoBoard : MonoBehaviour
         }
         if (numberFin >= numberofGuards)
             finished = true;
-
-        float[] errarray = new float[numberofGuards];
+        var combij = new int[6][];
+        int[] errarray = new int[numberofGuards*numberofGuards];
+        //int iter = 0;
+        //Debug.Log("new iter");
         for (int i = 0; i < numberofGuards; i++)        //pos[i] = 0-3 (in order)
         {
             for (int j = 0; j < numberofGuards; j++)        //pos[i] = 0-3 (in order)
@@ -62,19 +64,25 @@ public class T5_InfoBoard : MonoBehaviour
                 //int j = (i + 1) % (numberofGuards);
                 if (i == j)
                 {
-                    continue;
+                    break;
                 }
                 var terror = Vector3.Distance(pos[j], pos[i]);    //terror = temp error
                 Debug.DrawLine(new Vector3(pos[i][0], pos[i][1], 0F), new Vector3(pos[j][0], pos[j][1], 0F));
                 var idealdist = Vector2.Distance(new Vector2(goalpos[j][0], goalpos[j][1]), new Vector2(goalpos[i][0], goalpos[i][1]));
                 //need to subtract the ideal distance
                 terror = Mathf.Abs(terror) - idealdist;
+                //Debug.Log("Guard " + i + "pos:" + pos[i] + ", Guard " + j + "pos:" + pos[j] +": terror: " + terror);
                 terror = Mathf.Pow(terror, 2) * Time.deltaTime;
                 //Debug.Log("terror: " + terror);
                 err += terror;
+                //combij[iter][0] = i;
+                //combij[iter][1] = j;
+                //Debug.Log("combination: " + i + j);
+                //iter++;
             }
         }
-
+        //Debug.Log("end iter");
+        //Debug.Log("Guard Combinations: "+ combij);
         return err;
     }
 

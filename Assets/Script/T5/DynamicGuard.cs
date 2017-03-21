@@ -606,6 +606,7 @@ public class DynamicGuard : Point
                 if (t_run >= input.steer[2].time)
                 {
                     Debug.Log("Finished! Guard: " + guardID);
+                    finished = true;
                     t_run = 0;
                     finalstatus++;
                     //Debug.Break();
@@ -636,7 +637,7 @@ public class DynamicGuard : Point
         Debug.DrawLine(new Vector3(transform.position.x, transform.position.y, 20), new Vector3(transform.position.x + vel.x, transform.position.y + vel.y, 20), velcolour);
         Debug.DrawLine(new Vector3(transform.position.x, transform.position.y, 20), new Vector3(transform.position.x + sonic.x, transform.position.y + sonic.y, 20), Color.red);
 
-        return new Vector3(tx, ty, 0F);// * Time.deltaTime;
+        return new Vector3(tx, ty, 20F);// * Time.deltaTime;
     }
 
     private DubinInput dubinInput(DubinNode near, DubinNode target)
