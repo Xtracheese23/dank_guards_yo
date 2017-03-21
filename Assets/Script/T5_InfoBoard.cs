@@ -13,6 +13,7 @@ public class T5_InfoBoard : MonoBehaviour
     private float totalcost = 0F;
     private int numberofGuards = 0;
     private bool finished = false;
+    private bool rushover = false;
 
     string ParseFloat(float f)
     {
@@ -40,8 +41,12 @@ public class T5_InfoBoard : MonoBehaviour
             {
                 pos[i] = gObj.transform.position;
                 goalpos[i] = gObj.GetComponent<DynamicGuard>().goalPos;
-                
-                //if (Vector2.Distance(new Vector2(pos[i][0], pos[i][1]), new Vector2(goalpos[i][0], goalpos[i][1])) < 0.01F)
+
+                if (rushover || !gObj.GetComponent<DynamicGuard>().initialRush)
+                {
+                    rushover = true;
+                    gObj.GetComponent<DynamicGuard>().initialRush = false;
+                }
                 if (gObj.GetComponent<DynamicGuard>().finished)
                     numberFin++;
             }

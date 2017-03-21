@@ -18,12 +18,13 @@ public class DynamicGuard : Point
     private float t_run = 0F;
     private float t_dur = 0F;
     private Vector2 coll_acc;
-    private bool initialRush = true;
+    public bool initialRush = true;
     public bool finished = false;
     private float finalrad = 0;
     public float goalMag = 1;
     public float formMag = 20;
     public float obsMultiplier = 3;
+    public Color velcolour = Color.green;
 
     private float[][] integral;
     private float[][] prev_error;
@@ -45,38 +46,40 @@ public class DynamicGuard : Point
             var dirn = new Vector2(Mathf.Infinity, Mathf.Infinity);
             for (int i = 0; i < poly.Length; i++)   //each poly defines a new polygon, only need to return closest side
             {  
-                int j = i+1;
-                if (j >= poly.Length)    
-                {
-                    j = 0;  //hax
-                }
+                int j = (i+1)% poly.Length;
+
                 var closestpnt = ClosestPointOnLine(new Vector3(poly[i][0], poly[i][1],0F), new Vector3(poly[j][0], poly[j][1], 0F), transform.position);
-                var dist2 = Vector2.Distance(transform.position, closestpnt);
+                var dist2 = Mathf.Abs(Vector2.Distance(transform.position, closestpnt));
                 if (dist2 < dist)
                 {
                     dist = dist2;
-                    if (closestpnt == new Vector3(poly[i][0], poly[i][1], 0F))
+                    if (closestpnt == new Vector3(poly[i][0], poly[i][1], closestpnt.z))  //if closest point is the vertices, it is not between the vertices
                     {
-                        dirn = new Vector2(this.transform.position.x - poly[i][0], this.transform.position.y - poly[i][1]);
+                        dirn = new Vector2(this.transform.position.y - poly[i][1], this.transform.position.x - poly[i][0]);
                     }
-                    else if (closestpnt == new Vector3(poly[j][0], poly[j][1], 0F))
+                    else if (closestpnt == new Vector3(poly[j][0], poly[j][1], closestpnt.z))  //if closest point is the vertices, it is not between the vertices
                     {
-                        dirn = new Vector2(this.transform.position.x - poly[j][0], this.transform.position.y - poly[j][1]);
+                        dirn = new Vector2(this.transform.position.y - poly[j][1], this.transform.position.x - poly[j][0]); // might need to swap one of these
                     }
                     else
                     {
-                        dirn = new Vector2(poly[j][0] - poly[i][0], poly[i][1] - poly[j][1]);        //if the guard decides to suicide into the wall, this is the reason
-                        dirn.Normalize();                       // ^ p2x - p1x, p1y - p2y
-                        dirn *= dist2;
+                        //dirn = new Vector2(poly[j][0] - poly[i][0], poly[i][1] - poly[j][1]);        //if the guard decides to suicide into the wall, this is the reason
+                        dirn = new Vector2(poly[j][1] - poly[i][1], poly[i][0] - poly[j][0]);
                     }
+                    dirn.Normalize();                       // ^ p2x - p1x, p1y - p2y
+                    dirn *= Mathf.Pow(obsMultiplier / (dist), 2);
+                    //Debug.Log("dirn size " + dirn.magnitude + " dist " + dist);
                 }                                 
             }
-            if (dirn.x !=0)
-                dirn.x = Mathf.Pow(obsMultiplier / dirn.x, 2); 
+            
+            if (Vector2.Dot(vel, dirn) < 0 && dist < 5)
+            {
+                Debug.Log("Distance: " + dist + " dirn " + dirn + " Dot: " + Vector2.Dot(vel, dirn));
+                Debug.DrawLine(transform.position, transform.position + new Vector3(dirn.x, dirn.y, 0F), Color.magenta);
+                avoid += dirn;
+            }
+                
 
-            if (dirn.y != 0)
-                dirn.y = Mathf.Pow(obsMultiplier / dirn.y, 2);
-            avoid += dirn;
         }
         return avoid;
     }
@@ -112,7 +115,9 @@ public class DynamicGuard : Point
     {
         var x = this.goalPos[0] - this.transform.position.x;
         var y = this.goalPos[1] - this.transform.position.y;
-        return new Vector2 (x,y);
+        var comp = new Vector2(x, y);
+        comp.Normalize();
+        return comp;
     }
 
 
@@ -193,8 +198,8 @@ public class DynamicGuard : Point
         //Debug.Log("Guard ID: " + guardID + ", Error: " + Mathf.Sqrt(Mathf.Pow(obsavoid.x,2) + Mathf.Pow(obsavoid.y,2)));
         //Debug.Log("Guard: "+guardID+" Edge: (" + edgeavoid.x +", "+edgeavoid.y +")");
 
-        var x = goalcomp.x * goalMag + formcomp.x * formMag - obsavoid.x + edgeavoid.x;
-        var y = goalcomp.y * goalMag + formcomp.y * formMag - obsavoid.y + edgeavoid.y;
+        var x = goalcomp.x * goalMag + formcomp.x * formMag + obsavoid.x;// + edgeavoid.x;
+        var y = goalcomp.y * goalMag + formcomp.y * formMag + obsavoid.y;// + edgeavoid.y;
 
         var acc = new Vector2(x, y);
         if (acc.magnitude > MAX_ACCEL)
@@ -212,7 +217,7 @@ public class DynamicGuard : Point
         }
 
         //we're feeding it position + acceleration componenent, which is wrong
-        Debug.DrawLine(new Vector3(transform.position.x, transform.position.y, 20), new Vector3(transform.position.x + vel.x, transform.position.y + vel.y, 20), Color.blue);
+        Debug.DrawLine(new Vector3(transform.position.x, transform.position.y, 20), new Vector3(transform.position.x + vel.x, transform.position.y + vel.y, 20), velcolour);
         Debug.DrawLine(new Vector3(transform.position.x, transform.position.y, 20), new Vector3(transform.position.x + acc.x, transform.position.y + acc.y, 20), Color.black);
 
         return transform.position + new Vector3(vel.x, vel.y, 0F) * dt;
@@ -243,7 +248,7 @@ public class DynamicGuard : Point
         }
 
         //we're feeding it position + acceleration componenent, which is wrong
-        Debug.DrawLine(new Vector3(transform.position.x, transform.position.y, 20), new Vector3(transform.position.x + vel.x, transform.position.y + vel.y, 20), Color.green);
+        Debug.DrawLine(new Vector3(transform.position.x, transform.position.y, 20), new Vector3(transform.position.x + vel.x, transform.position.y + vel.y, 20), velcolour);
         Debug.DrawLine(new Vector3(transform.position.x, transform.position.y, 20), new Vector3(transform.position.x + acc.x, transform.position.y + acc.y, 20), Color.black);
         return transform.position + new Vector3(vel.x, vel.y, 0F) * dt;
     }
@@ -331,6 +336,7 @@ public class DynamicGuard : Point
                 }
                 else
                 {
+                    velcolour = Color.blue;
                     input = GetInput();     //Regurlar Input
                 }
             }
@@ -440,7 +446,7 @@ public class DynamicGuard : Point
         {
             vel += coll_acc * dt;
             t_run += dt;
-            Debug.DrawLine(new Vector3(transform.position.x, transform.position.y, 20), new Vector3(transform.position.x + vel.x, transform.position.y + vel.y, 20), Color.black);
+            Debug.DrawLine(new Vector3(transform.position.x, transform.position.y, 20), new Vector3(transform.position.x + vel.x, transform.position.y + vel.y, 20), velcolour);
             Debug.DrawLine(new Vector3(transform.position.x, transform.position.y, 20), new Vector3(transform.position.x + coll_acc.x, transform.position.y + coll_acc.y, 20), Color.red);
 
             return transform.position + new Vector3(vel.x, vel.y, 0F) * dt;
@@ -515,8 +521,8 @@ public class DynamicGuard : Point
         }
 
         //we're feeding it position + acceleration componenent, which is wrong
-        Debug.DrawLine(new Vector3(transform.position.x, transform.position.y, 20), new Vector3(transform.position.x + vel.x, transform.position.y + vel.y, 20), Color.red);
-        Debug.DrawLine(new Vector3(transform.position.x, transform.position.y, 20), new Vector3(transform.position.x + acc.x, transform.position.y + acc.y, 20), Color.black);
+        Debug.DrawLine(new Vector3(transform.position.x, transform.position.y, 20), new Vector3(transform.position.x + vel.x, transform.position.y + vel.y, 20), velcolour);
+        Debug.DrawLine(new Vector3(transform.position.x, transform.position.y, 20), new Vector3(transform.position.x + acc.x, transform.position.y + acc.y, 20), Color.red);
 
         return new Vector3(tx, ty, 0F);// * Time.deltaTime;
     }
@@ -525,6 +531,7 @@ public class DynamicGuard : Point
     private DubinInput input;
     private int finalstatus = 0;
     private float theta;
+    //private Vector2 prevel;
     Vector3 getFinalInput()
     {
 
@@ -541,11 +548,13 @@ public class DynamicGuard : Point
             t_run = 0;
             theta = current.theta;
             inFinalInput = true;
-            Debug.Log("Enter Case 0, Guard: " + guardID + " Time: " + input.steer[0].time + " Omega: " + input.steer[0].omega);
+            var magacc = new Vector2(input.steer[0].v * input.steer[0].omega, input.steer[0].v * input.steer[0].omega).magnitude;
+            Debug.Log("Enter Case 0, Guard: " + guardID + " Time: " + input.steer[0].time + " Omega: " + input.steer[0].omega + " Acc: " + magacc);
             //Debug.Break();
         }
         var dt = Time.deltaTime;
-        
+
+        var sonic = new Vector2(0F, 0F);
         switch (finalstatus)
         {
             case 0:
@@ -553,26 +562,34 @@ public class DynamicGuard : Point
                 t_run += dt;
                 vel.x = input.steer[0].v * Mathf.Cos(theta);
                 vel.y = input.steer[0].v * Mathf.Sin(theta);
-                //Debug.Break();
+                sonic = new Vector2(input.steer[0].v*input.steer[0].omega, input.steer[0].v * input.steer[0].omega);
+                if (input.steer[0].omega > 0)
+                    sonic = -sonic;
+                sonic.Normalize();
+                sonic *= MAX_ACCEL;
                 if (t_run >= input.steer[0].time)
                 {
-                    Debug.Log("Enter Case 1, Guard: " + guardID + " Time: " + input.steer[1].time + " Acc: " + input.steer[1].a);
+                    Debug.Log("Enter Case 1, Guard: " + guardID + " Time: " + input.steer[1].time + " Omega: " + input.steer[1].omega + " Acc: " + input.steer[1].a);
+                    //var appxacc = new Vector2((vel.x - prevel.x),(vel.y- prevel.y)).magnitude / dt;
+                    //Debug.Log("Sonic.mag: " + sonic.magnitude + " Appx Accel: " + appxacc);
                     t_run = 0;
                     finalstatus++;
-                    //Debug.Break();
                 }
+                //prevel = vel;
                 break;
             case 1:
                 theta += input.steer[1].omega * dt;
                 t_run += dt;
                 vel.x += Mathf.Cos(theta) * input.steer[1].a * dt;
                 vel.y += Mathf.Sin(theta) * input.steer[1].a * dt;
+                sonic = new Vector2(Mathf.Cos(theta) * input.steer[1].a, Mathf.Sin(theta) * input.steer[1].a);
+                //sonic = -sonic;
                 //Debug.Break();
                 if (t_run >= input.steer[1].time)
                 {
                     t_run = 0;
                     finalstatus++;
-                    Debug.Log("Enter Case 0, Guard: " + guardID + " Time: " + input.steer[0].time + " Omega: " + input.steer[0].omega);
+                    Debug.Log("Enter Case 0, Guard: " + guardID + " Time: " + input.steer[2].time + " Omega: " + input.steer[2].omega + " Acc: " + sonic.magnitude);
                     //Debug.Break();
                 }
                 break;
@@ -581,6 +598,11 @@ public class DynamicGuard : Point
                 t_run += dt;
                 vel.x = input.steer[2].v * Mathf.Cos(theta);
                 vel.y = input.steer[2].v * Mathf.Sin(theta);
+                sonic = new Vector2(input.steer[2].v * input.steer[2].omega, input.steer[2].v * input.steer[2].omega);
+                if (input.steer[2].omega > 0)
+                    sonic = -sonic;
+                sonic.Normalize();
+                sonic *= MAX_ACCEL;
                 //Debug.Break();
                 if (t_run >= input.steer[2].time)
                 {
@@ -612,8 +634,8 @@ public class DynamicGuard : Point
         }
 
         //we're feeding it position + acceleration componenent, which is wrong
-        Debug.DrawLine(new Vector3(transform.position.x, transform.position.y, 20), new Vector3(transform.position.x + vel.x, transform.position.y + vel.y, 20), Color.red);
-        Debug.DrawLine(new Vector3(transform.position.x, transform.position.y, 20), new Vector3(tx, ty, 20), Color.black);
+        Debug.DrawLine(new Vector3(transform.position.x, transform.position.y, 20), new Vector3(transform.position.x + vel.x, transform.position.y + vel.y, 20), velcolour);
+        Debug.DrawLine(new Vector3(transform.position.x, transform.position.y, 20), new Vector3(transform.position.x + sonic.x, transform.position.y + sonic.y, 20), Color.red);
 
         return new Vector3(tx, ty, 0F);// * Time.deltaTime;
     }
