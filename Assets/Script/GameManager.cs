@@ -161,6 +161,7 @@ public class GameManager : MonoBehaviour {
         point = point ? point : player.GetComponent<StaticGuard>();
         point = point ? point : player.GetComponent<KinematicGuard>();
         point = point ? point : player.GetComponent<DynamicGuard>();
+        point = point ? point : player.GetComponent<DynamicCar>();
         return point;
     }
 

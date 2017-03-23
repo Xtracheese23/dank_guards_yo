@@ -6,7 +6,7 @@ using KDTreeDLL;
 using UnityEngine.Assertions;
 using Random = UnityEngine.Random;
 
-public class DynamicGuard : Point
+public class DynamicCar : Point
 {
     private const float DELTA_T = 0.01F;
     public Vector2 guardPos = new Vector2(0F,0F);
@@ -73,7 +73,7 @@ public class DynamicGuard : Point
             
             if (Vector2.Dot(vel, dirn) < 0 && dist < 5)
             {
-                Debug.Log("Distance: " + dist + " dirn " + dirn + " Dot: " + Vector2.Dot(vel, dirn));
+                //Debug.Log("Distance: " + dist + " dirn " + dirn + " Dot: " + Vector2.Dot(vel, dirn));
                 Debug.DrawLine(transform.position, transform.position + new Vector3(dirn.x, dirn.y, 0F), Color.magenta);
                 avoid += dirn;
             }
@@ -189,6 +189,7 @@ public class DynamicGuard : Point
     {
         //var pid: PID;    // Set values in the inspector.
         //var correction = pid.Update(setSpeed, actualSpeed, Time.deltaTime);
+        var dt = Time.deltaTime;
 
         var goalcomp = GoalComponent();
         var formcomp = FormationComponent(false);
@@ -197,27 +198,71 @@ public class DynamicGuard : Point
         //Debug.Log("Guard ID: " + guardID + ", Error: " + Mathf.Sqrt(Mathf.Pow(obsavoid.x,2) + Mathf.Pow(obsavoid.y,2)));
         //Debug.Log("Guard: "+guardID+" Edge: (" + edgeavoid.x +", "+edgeavoid.y +")");
 
-        var x = goalcomp.x * goalMag + formcomp.x * formMag + obsavoid.x;// + edgeavoid.x;
-        var y = goalcomp.y * goalMag + formcomp.y * formMag + obsavoid.y;// + edgeavoid.y;
+        var xdir = goalcomp.x * goalMag + formcomp.x * formMag + obsavoid.x;// + edgeavoid.x;
+        var ydir = goalcomp.y * goalMag + formcomp.y * formMag + obsavoid.y;// + edgeavoid.y;
 
-        var acc = new Vector2(x, y);
-        if (acc.magnitude > MAX_ACCEL)
-        {
-            acc.Normalize();
-            acc *= MAX_ACCEL;
-        }
+        var dir = new Vector2(xdir, ydir);
+        if (guardID == 2)
+            Debug.Log("dirvel " + dir + " 1/dirvel" + (1/dir.magnitude));
 
-        var dt = Time.deltaTime;
-        vel += acc * dt;
+        //float idealtheta = Mathf.Atan2(ydir, xdir);
+        float idealtheta = Mathf.Atan2(dir.y, dir.x);
+        //idealtheta = (idealtheta % Mathf.PI*2);
+        //idealtheta = idealtheta < 0 ? idealtheta + Mathf.PI * 2 : idealtheta; //radians
+        //idealtheta = idealtheta * 180 / Mathf.PI;
+
+        //Debug.Log("theta: " + theta/2F  + " Act Rotation " + transform.rotation.z);
+
+        /*var newtheta = transform.eulerAngles.z; //degrees
+        newtheta = newtheta * Mathf.PI / 180; //radians
+        newtheta = newtheta % Mathf.PI * 2;
+        newtheta = newtheta < 0 ? newtheta + Mathf.PI * 2 : newtheta;*/
+        //var newtheta = theta;
+
+        var omegasign = Mathf.Sign(idealtheta - newtheta);  //radians
+        if (guardID == 2)
+            Debug.Log("optional omega: " + (idealtheta - newtheta));
+        //ebug.Log("omega " + omega);
+
+        //omega = Mathf.Abs(omega) < MAX_OMEGA ? omega : -Mathf.Sign(omega)*MAX_OMEGA; //radians
+
+        float g = 9.81F;
+        var v = new Vector2(xdir, ydir).magnitude;
+        v = v < MAX_SPEED ? v : MAX_SPEED;
+
+        //var v = amag / omega;
+        var omega = Mathf.Min((v / L_CAR) * Mathf.Tan(MAX_PHI), Mathf.Min(MAX_ACCEL / v, (g * K_FRICTION) / (Mathf.Sqrt(2) * v)));
+        v = MAX_ACCEL / omega;
+        omega = Mathf.Abs(omega) < MAX_OMEGA ? omega : MAX_OMEGA;
+        
+        omega *= omegasign;
+
+        v = 1 / dir.magnitude;
+        v = v < MAX_SPEED ? v : MAX_SPEED;
+        var vsign = Mathf.Sign(Vector2.Dot(vel, dir));
+
+        var prevel = vel;
+        var prevtheta = newtheta;
+        newtheta += omega*dt;  //radians
+        
+        vel.x += v * Mathf.Cos(newtheta)* dt + vsign *MAX_ACCEL*dt*dt;
+        vel.y += vsign * v * Mathf.Sin(newtheta) * dt + vsign* MAX_ACCEL*dt * dt;
+        if (guardID == 2)
+            Debug.Log("Guard: " + guardID + " Omega: " + omega + " Vel: " + v + " IdealTheta: " + idealtheta + " Prev theta: " + prevtheta + " Aft Theta " + newtheta + " prevel: "+ prevel + " vel: " + vel + " deltatime " + dt);
+
         if (vel.magnitude > MAX_SPEED)
         {
             vel.Normalize();
             vel *= MAX_SPEED;
         }
 
+
+        //omega = Mathf.Min((v / L_CAR) * Mathf.Tan(MAX_PHI), Mathf.Min(MAX_ACCEL / v, (g * K_FRICTION) / (Mathf.Sqrt(2) * v)));
+
         //we're feeding it position + acceleration componenent, which is wrong
-        Debug.DrawLine(new Vector3(transform.position.x, transform.position.y, 20), new Vector3(transform.position.x + vel.x, transform.position.y + vel.y, 20), velcolour);
-        Debug.DrawLine(new Vector3(transform.position.x, transform.position.y, 20), new Vector3(transform.position.x + acc.x, transform.position.y + acc.y, 20), Color.black);
+        Debug.DrawLine(new Vector3(transform.position.x, transform.position.y, 20), new Vector3(transform.position.x + dir.x, transform.position.y + dir.y, 20), Color.yellow);
+        Debug.DrawLine(new Vector3(transform.position.x, transform.position.y, 20), new Vector3(transform.position.x + Mathf.Cos(newtheta), transform.position.y + Mathf.Sin(newtheta), 20), velcolour);
+        Debug.DrawLine(new Vector3(transform.position.x, transform.position.y, 20), new Vector3(transform.position.x + Mathf.Cos(idealtheta), transform.position.y + Mathf.Sin(idealtheta), 20), Color.black);  //actually reaches this
 
         return transform.position + new Vector3(vel.x, vel.y, 0F) * dt;
     }
@@ -240,11 +285,11 @@ public class DynamicGuard : Point
 
         var dt = Time.deltaTime;
         vel += acc * dt;
-        if (vel.magnitude > MAX_SPEED)
+        /*if (vel.magnitude > MAX_SPEED)
         {
             vel.Normalize();
             vel *= MAX_SPEED;
-        }
+        }*/
 
         //we're feeding it position + acceleration componenent, which is wrong
         Debug.DrawLine(new Vector3(transform.position.x, transform.position.y, 20), new Vector3(transform.position.x + vel.x, transform.position.y + vel.y, 20), velcolour);
@@ -252,6 +297,7 @@ public class DynamicGuard : Point
         return transform.position + new Vector3(vel.x, vel.y, 0F) * dt;
     }
 
+    private float newtheta;
     void Formcheck()
     {
         float x = 0, y = 0;
@@ -278,7 +324,14 @@ public class DynamicGuard : Point
         }
         var error = new Vector2(x, y).magnitude;
         if (error < 1) //arbitrary
+        {
             initialRush = false;
+            newtheta = transform.eulerAngles.z; //degrees
+            newtheta = newtheta * Mathf.PI / 180; //radians
+            newtheta = newtheta % Mathf.PI * 2;
+            newtheta = newtheta < 0 ? newtheta + Mathf.PI * 2 : newtheta;
+
+        }
     }
 
     // Use this for initialization
@@ -297,6 +350,9 @@ public class DynamicGuard : Point
     {
         totalTime += Time.deltaTime;
         UpdatePosition();
+        float theta = Mathf.Atan2(vel.y, vel.x);
+        theta = theta < 0 ? theta + Mathf.PI * 2 : theta;
+        transform.rotation = Quaternion.Euler(0F, 0F, theta * 180 / Mathf.PI);
     }
 
     
@@ -326,7 +382,7 @@ public class DynamicGuard : Point
         }
         else
         {
-            input = CollisionImminant();
+            //input = CollisionImminant();
             if (!collision)
             {
                 if(initialRush)
