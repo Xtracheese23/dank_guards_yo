@@ -5,10 +5,11 @@ using UnityEngine;
 using KDTreeDLL;
 using Random = UnityEngine.Random;
 
-public class DDrive : Point
+public class Formationer : Point
 {
     public float startTheta;
     public float goalTheta;
+    private float[] firstgoal = new float[2] {0,0};
 
 
     public int task;
@@ -34,8 +35,11 @@ public class DDrive : Point
     {
         foreach (var p in nodes)
         {
+            Gizmos.color = Color.white;
             Gizmos.DrawCube(new Vector3(p.pos.x, p.pos.y, 20), new Vector3(0.2F, 0.2F, 0));
         }
+        Gizmos.color = Color.cyan;
+        Gizmos.DrawCube(new Vector3(firstgoal[0], firstgoal[1], 20), new Vector3(0.2F, 0.2F, 0));
     }
 
     bool fulfillInformed(Vector2 p)
@@ -69,6 +73,7 @@ public class DDrive : Point
     {
         /*var r = Random.Range(0F, 1.0F);
                 if (r < 0.01F) return goalNode;*/
+        Debug.Break();
         Vector2 p = Utils.randomPoint(startNode, goalNode, boundaryPolygon, polygons);
         float theta = Random.Range(0, 2 * Mathf.PI);
         float v;
@@ -212,7 +217,7 @@ public class DDrive : Point
                     ttheta -= 2 * Mathf.PI;
                 while (ttheta < 0)
                     ttheta += 2 * Mathf.PI;
-                if (collision && !Cheetah.instance.IsValid(pos)) return false;
+                if (collision && !Cheetah.instance.IsValid(pos)) return false;  //breaks on collision
                 DubinNode nextPoint = new DubinNode(pos, steer.v, (float) ttheta, steer.omega, prev.time + dt);
                 if (!collision) list.Add(nextPoint);
 //                if ((nextPoint.pos - prev.pos).magnitude > 0.5) // TODO: debug
@@ -237,13 +242,13 @@ public class DDrive : Point
 
     public int iter;
 
-    List<Node> PlanRrtStar()
+    List<Node> PlanRrtStar(float[] stpos, float[] stvel, float [] gopos, float[] govel, float stheta, float gheta)
     {
         // RRT*
-        startNode = new DubinNode(new Vector2(startPos[0], startPos[1]), new Vector2(startVel[0], startVel[1]).magnitude,
-            startTheta, MAX_OMEGA, 0);
+        startNode = new DubinNode(new Vector2(stpos[0], stpos[1]), new Vector2(stvel[0], stvel[1]).magnitude,
+            stheta, MAX_OMEGA, 0);
         addNode(nodes, startNode);
-        goalNode = new DubinNode(new Vector2(goalPos[0], goalPos[1]), new Vector2(goalVel[0], goalVel[1]).magnitude, goalTheta, MAX_OMEGA, 0);
+        goalNode = new DubinNode(new Vector2(gopos[0], gopos[1]), new Vector2(govel[0], govel[1]).magnitude, gheta, MAX_OMEGA, 0);
         int cnt = iter, i = 0;
         float r = Mathf.Infinity; // TODO: Dynamic compute this r
         var solnCnt = 0;
@@ -322,16 +327,16 @@ public class DDrive : Point
         startTheta = Mathf.Atan2(startVel[1], startVel[0]);
         if (startTheta < -EPS)
             startTheta += 2F * Mathf.PI;
-        goalTheta = Mathf.Atan2(goalVel[1], goalVel[0]);
-        if (goalTheta < -EPS)
-            goalTheta += 2F * Mathf.PI;
         //TimerText.text = "0";
         kdTree = new KDTree(2);
         DubinUtils.MAX_SPEED = MAX_SPEED;
 
+        goalTheta = Mathf.Atan2(goalVel[1], goalVel[0]);
+        if (goalTheta < -EPS)
+            goalTheta += 2F * Mathf.PI;
 
         var t = DateTime.Now;
-        path = PlanRrtStar();
+        path = PlanRrtStar(startPos, startVel, goalPos, goalVel, startTheta, goalTheta);   //float[] stpos, float[] stvel, float [] gopos, float[] govel, float stheta, float gheta
 
         startTime = Time.time;
         Debug.Log(DateTime.Now - t);

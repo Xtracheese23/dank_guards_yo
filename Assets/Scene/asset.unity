@@ -258,7 +258,7 @@ MonoBehaviour:
   - {fileID: 0}
   map: {fileID: 0}
   colors: []
-  ai: {fileID: 1937396304084776, guid: a8189e7f7ec421c42b89a273bbbadd74, type: 2}
+  ai: {fileID: 1937396304084776, guid: 8a7a8e926c82c4a4ca0008582ce908c2, type: 2}
   mapai: {fileID: 1785505170316712, guid: 9b95125bb66c93440b0534a204ed21fe, type: 2}
   camera: {fileID: 1665364587}
   task: 5
@@ -270,7 +270,7 @@ MonoBehaviour:
   obs: 2
   range: 3
   useSaved: 0
-  problem: problem_A5_1.json
+  problem: problem_A5_2.json
 --- !u!4 &946960906
 Transform:
   m_ObjectHideFlags: 0
@@ -296,6 +296,7 @@ GameObject:
   - component: {fileID: 1336438766}
   - component: {fileID: 1336438765}
   - component: {fileID: 1336438769}
+  - component: {fileID: 1336438770}
   m_Layer: 5
   m_Name: Canvas
   m_TagString: Untagged
@@ -384,12 +385,32 @@ MonoBehaviour:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1336438764}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 40b7ae6951860124996323cc5368bd38, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   info: {fileID: 620976497}
+--- !u!114 &1336438770
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1336438764}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c1237c69f2cf36347acd965d7a5fe6bd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  info: {fileID: 0}
+  showTime: 0
+  showPos: 0
+  showTheta: 0
+  showVel: 0
+  showAcc: 0
+  showOmega: 0
+  showPhi: 0
+  showGK: 0
 --- !u!1 &1665364587
 GameObject:
   m_ObjectHideFlags: 0

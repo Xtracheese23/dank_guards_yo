@@ -8,9 +8,11 @@ using UnityEngine.UI;
 
 public class GameManager : MonoBehaviour {
     public Point[] point;
+    public Point formation;
     public Set[] guardSets;
     public Map map;
     public Color[] colors;
+    public GameObject formhold;
     public GameObject ai;
     public GameObject mapai;
     public GameObject camera;
@@ -186,6 +188,15 @@ public class GameManager : MonoBehaviour {
         Map field = null;
         field = field ? field : player.GetComponent<MapAI>();
         return field;
+    }
+
+    Point CreateFormation()
+    {
+
+        var player = Instantiate(formhold, transform.position, transform.rotation);   //why can I not just set transform.position to what I want?
+        Point point = null;
+        point = point ? point : player.GetComponent<Formationer>();
+        return point;
     }
 
     void Awake()
@@ -421,10 +432,54 @@ public class GameManager : MonoBehaviour {
             }
         }
 
+        float averagex = 0, averagey = 0, avggoalx = 0, avggoaly = 0;
+        
+        for (int i = 0; i < start_positions.Length; i++)
+        {
+            averagex += start_positions[i][0];
+            averagey += start_positions[i][1];
+            avggoalx += end_positions[i][0];
+            avggoaly += end_positions[i][1];
+        }
+        averagex /= start_positions.Length;
+        averagey /= start_positions.Length;
+
+        formation = CreateFormation();
+        formation.startPos = new float[2] { averagex, averagey };
+        avggoalx /= start_positions.Length;
+        avggoaly /= start_positions.Length;
+        formation.goalPos = new float[2] { avggoalx, avggoaly };
+
+        formation.startVel = input.start_vel;
+        formation.goalVel = input.goal_vel;
+
+        formation.MAX_SPEED = input.v_max;
+        formation.MAX_ACCEL = input.a_max;
+        formation.MAX_OMEGA = input.omega_max;
+        formation.MAX_PHI = input.phi_max;
+        formation.L_CAR = input.L_car;
+        formation.K_FRICTION = input.k_friction;
+        formation.polygons = inputPolygon;
+
+        formation.startVel = input.start_vel;
+        formation.goalVel = input.goal_vel;
+        formation.boundaryPolygon = boundaryPolygon;
+        formation.Kp = Kp;
+        formation.Ki = Ki;
+        formation.Kd = Kd;
+
+
+        for (int i = 0; i < numberofGuards; i++)
+        {
+
+            var x = point[i].goalPos[0] - formation.goalPos[0];
+            var y = point[i].goalPos[1] - formation.goalPos[1];
+            formation.formation.Add(new Vector2(x, y));
+        }
 
         // Power of Cheetah
 
-        //Cheetah.instance.CreateOrLoad(problem, boundaryPolygon, inputPolygon);
+        Cheetah.instance.CreateOrLoad(problem, boundaryPolygon, inputPolygon);
 
         if (UnityEditor.SceneView.sceneViews.Count > 0)
         {

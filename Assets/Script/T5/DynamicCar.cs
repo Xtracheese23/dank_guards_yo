@@ -187,20 +187,54 @@ public class DynamicCar : Point
 
     Vector3 GetInput()
     {
-        //var pid: PID;    // Set values in the inspector.
-        //var correction = pid.Update(setSpeed, actualSpeed, Time.deltaTime);
         var dt = Time.deltaTime;
 
         var goalcomp = GoalComponent();
         var formcomp = FormationComponent(false);
         var obsavoid = ObstacleAvoid();
         var edgeavoid = AvoidWalls();
-        //Debug.Log("Guard ID: " + guardID + ", Error: " + Mathf.Sqrt(Mathf.Pow(obsavoid.x,2) + Mathf.Pow(obsavoid.y,2)));
-        //Debug.Log("Guard: "+guardID+" Edge: (" + edgeavoid.x +", "+edgeavoid.y +")");
 
-        var xdir = goalcomp.x * goalMag + formcomp.x * formMag + obsavoid.x;// + edgeavoid.x;
-        var ydir = goalcomp.y * goalMag + formcomp.y * formMag + obsavoid.y;// + edgeavoid.y;
+        Vector2 dir;
+        dir.x = goalcomp.x * goalMag + formcomp.x * formMag + obsavoid.x;// + edgeavoid.x;
+        dir.y = goalcomp.y * goalMag + formcomp.y * formMag + obsavoid.y;// + edgeavoid.y;
 
+
+        newtheta = transform.eulerAngles.z; //degrees
+        newtheta = newtheta * Mathf.PI / 180; //radians
+        newtheta = newtheta % (Mathf.PI * 2F);
+
+        float idealtheta = Mathf.Atan2(dir.y, dir.x);   //confirmed that x and y is in the proper direction
+
+        //var diff = newtheta - idealtheta;
+        var diff = idealtheta - newtheta;
+        diff = diff > Mathf.PI ? diff - Mathf.PI * 2 : diff;
+
+        var samedir = Mathf.Sign(Vector2.Dot(vel, dir));
+
+        var v = vel.magnitude + samedir* Mathf.Abs(1 / diff) * MAX_ACCEL * dt * dt;
+        var omega = MAX_OMEGA * Mathf.Sign(diff);
+
+        newtheta += dt*omega;
+
+        vel.x = v * Mathf.Cos(newtheta) ; // need +=
+        vel.y = v * Mathf.Sin(newtheta) ;
+
+        if (guardID == 2)
+            Debug.Log("diff: " + diff + " samedir: " + samedir + " velMag: " + vel.magnitude + " v: " + v);
+
+        if (vel.magnitude > MAX_SPEED)
+        {
+            vel.Normalize();
+            vel *= MAX_SPEED;
+        }
+
+        Debug.DrawLine(new Vector3(transform.position.x, transform.position.y, 20), new Vector3(transform.position.x + dir.x, transform.position.y + dir.y, 20), Color.yellow);
+        Debug.DrawLine(new Vector3(transform.position.x, transform.position.y, 20), new Vector3(transform.position.x + Mathf.Cos(newtheta), transform.position.y + Mathf.Sin(newtheta), 20), velcolour);
+        Debug.DrawLine(new Vector3(transform.position.x, transform.position.y, 20), new Vector3(transform.position.x + Mathf.Cos(idealtheta), transform.position.y + Mathf.Sin(idealtheta), 20), Color.black);  //actually reaches this
+
+        return transform.position + new Vector3(vel.x, vel.y, 0F) * dt;
+
+        /*
         var dir = new Vector2(xdir, ydir);
         if (guardID == 2)
             Debug.Log("dirvel " + dir + " 1/dirvel" + (1/dir.magnitude));
@@ -216,7 +250,7 @@ public class DynamicCar : Point
         /*var newtheta = transform.eulerAngles.z; //degrees
         newtheta = newtheta * Mathf.PI / 180; //radians
         newtheta = newtheta % Mathf.PI * 2;
-        newtheta = newtheta < 0 ? newtheta + Mathf.PI * 2 : newtheta;*/
+        newtheta = newtheta < 0 ? newtheta + Mathf.PI * 2 : newtheta;
         //var newtheta = theta;
 
         var omegasign = Mathf.Sign(idealtheta - newtheta);  //radians
@@ -257,14 +291,10 @@ public class DynamicCar : Point
         }
 
 
-        //omega = Mathf.Min((v / L_CAR) * Mathf.Tan(MAX_PHI), Mathf.Min(MAX_ACCEL / v, (g * K_FRICTION) / (Mathf.Sqrt(2) * v)));
+        //omega = Mathf.Min((v / L_CAR) * Mathf.Tan(MAX_PHI), Mathf.Min(MAX_ACCEL / v, (g * K_FRICTION) / (Mathf.Sqrt(2) * v)));*/
 
         //we're feeding it position + acceleration componenent, which is wrong
-        Debug.DrawLine(new Vector3(transform.position.x, transform.position.y, 20), new Vector3(transform.position.x + dir.x, transform.position.y + dir.y, 20), Color.yellow);
-        Debug.DrawLine(new Vector3(transform.position.x, transform.position.y, 20), new Vector3(transform.position.x + Mathf.Cos(newtheta), transform.position.y + Mathf.Sin(newtheta), 20), velcolour);
-        Debug.DrawLine(new Vector3(transform.position.x, transform.position.y, 20), new Vector3(transform.position.x + Mathf.Cos(idealtheta), transform.position.y + Mathf.Sin(idealtheta), 20), Color.black);  //actually reaches this
 
-        return transform.position + new Vector3(vel.x, vel.y, 0F) * dt;
     }
 
     Vector3 GetInitialInput()
@@ -326,11 +356,6 @@ public class DynamicCar : Point
         if (error < 1) //arbitrary
         {
             initialRush = false;
-            newtheta = transform.eulerAngles.z; //degrees
-            newtheta = newtheta * Mathf.PI / 180; //radians
-            newtheta = newtheta % Mathf.PI * 2;
-            newtheta = newtheta < 0 ? newtheta + Mathf.PI * 2 : newtheta;
-
         }
     }
 
