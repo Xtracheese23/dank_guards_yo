@@ -36,7 +36,7 @@ public class DDrive : Point
         foreach (var p in nodes)
         {
             Gizmos.color = Color.white;
-            Gizmos.DrawCube(new Vector3(p.pos.x, p.pos.y, 20), new Vector3(0.2F, 0.2F, 0));
+            //Gizmos.DrawCube(new Vector3(p.pos.x, p.pos.y, 20), new Vector3(0.2F, 0.2F, 0));
         }
         Gizmos.color = Color.cyan;
         Gizmos.DrawCube(new Vector3(firstgoal[0], firstgoal[1], 20), new Vector3(0.2F, 0.2F, 0));
@@ -299,7 +299,7 @@ public class DDrive : Point
         }
 
         var filledPath = GetFilledPath(path);
-        Utils.SaveFilledPath(filledPath);
+        Utils.SaveFilledPath(filledPath, guardID);
 
         Debug.Log("path " + path.Count);
         Debug.Log("path[cnt] " + path[path.Count - 1].pos.x + " " + path[path.Count - 1].pos.y + " " +

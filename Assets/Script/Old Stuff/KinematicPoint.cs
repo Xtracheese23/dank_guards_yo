@@ -67,7 +67,7 @@ public class KinematicPoint : Point {
         }
         Debug.Log("goal time " + path[path.Count - 1].time);
         var filledPath = GetFilledPath(path);
-        Utils.SaveFilledPath(filledPath);
+        Utils.SaveFilledPath(filledPath, guardID);
         return filledPath;
     }
 

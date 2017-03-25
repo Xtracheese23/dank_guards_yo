@@ -318,7 +318,7 @@ public class DynamicPoint : Point
         Utils.backtrackPath(nodes, startNode, goalNode, path);
 
         var filledPath = GetFilledPath(path);
-        Utils.SaveFilledPath(filledPath);
+        Utils.SaveFilledPath(filledPath, guardID);
 
         Debug.Log("path " + path.Count);
         Debug.Log("goal time " + goalNode.time);

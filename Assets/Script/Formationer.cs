@@ -10,7 +10,8 @@ public class Formationer : Point
     public float startTheta;
     public float goalTheta;
     private float[] firstgoal = new float[2] {0,0};
-
+    public static List<Vector2> form2;
+    public static int numberofbreaks = 0;
 
     public int task;
 
@@ -38,8 +39,12 @@ public class Formationer : Point
             Gizmos.color = Color.white;
             Gizmos.DrawCube(new Vector3(p.pos.x, p.pos.y, 20), new Vector3(0.2F, 0.2F, 0));
         }
-        Gizmos.color = Color.cyan;
-        Gizmos.DrawCube(new Vector3(firstgoal[0], firstgoal[1], 20), new Vector3(0.2F, 0.2F, 0));
+        foreach (var form in formation)
+        {
+            Gizmos.color = Color.cyan;
+            Gizmos.DrawCube(transform.position + new Vector3(form[0], form[1], 0F), new Vector3(0.2F, 0.2F, 0));
+        }
+
     }
 
     bool fulfillInformed(Vector2 p)
@@ -196,13 +201,15 @@ public class Formationer : Point
      * 1. if collision param is true: check for collision, will return bool
      * 2. else: put interpolated nodes into list
      */
-
+    
     public static bool dubinsTransition(bool collision, List<Node> list, DubinNode from, DubinNode to, DubinInput input)
     {
         DubinNode prev = from;
         double tx = from.pos.x, ty = from.pos.y, ttheta = from.theta; // HACK: to improve precision
         foreach (DubinInput.Steer steer in input.steer)
         {
+            float formCnt = form2.Count;
+            var form = form2;
             float sumT = 0;
             double v = steer.v;
             while (sumT < steer.time)
@@ -210,22 +217,25 @@ public class Formationer : Point
                 var dt = Mathf.Min(DELTA_T, steer.time);
                 tx = tx + dt * v * Math.Cos(prev.theta);
                 ty = ty + dt * v * Math.Sin(prev.theta);
-                var pos = new Vector2((float) tx, (float) ty);
+                var pos = new Vector2((float) tx, (float) ty);  //maybe this is the one we're talking about
                 v += dt * steer.a;
                 ttheta = ttheta + dt * steer.omega;
                 while (ttheta > 2 * Mathf.PI)
                     ttheta -= 2 * Mathf.PI;
                 while (ttheta < 0)
                     ttheta += 2 * Mathf.PI;
-                if (collision && !Cheetah.instance.IsValid(pos)) return false;  //breaks on collision
+                for (int i =0; i < formCnt; i++)
+                {
+                    var temppos = pos + form2[i];
+                    if (collision && !Cheetah.instance.IsValid(temppos))
+                    {
+                        numberofbreaks++;
+                        return false;  //breaks on collision
+                    }
+                }
                 DubinNode nextPoint = new DubinNode(pos, steer.v, (float) ttheta, steer.omega, prev.time + dt);
                 if (!collision) list.Add(nextPoint);
-//                if ((nextPoint.pos - prev.pos).magnitude > 0.5) // TODO: debug
-//                {
-//                    Debug.Log("WTF");
-//                    dubinInput(from, to);
-//                    return false;
-//                }
+
                 prev = nextPoint;
                 sumT += dt;
             }
@@ -245,6 +255,7 @@ public class Formationer : Point
     List<Node> PlanRrtStar(float[] stpos, float[] stvel, float [] gopos, float[] govel, float stheta, float gheta)
     {
         // RRT*
+        form2 = formation;
         startNode = new DubinNode(new Vector2(stpos[0], stpos[1]), new Vector2(stvel[0], stvel[1]).magnitude,
             stheta, MAX_OMEGA, 0);
         addNode(nodes, startNode);
@@ -252,9 +263,10 @@ public class Formationer : Point
         int cnt = iter, i = 0;
         float r = Mathf.Infinity; // TODO: Dynamic compute this r
         var solnCnt = 0;
-        while (i++ < cnt)
+        //while (i++ < cnt)
+        while (nodes.Count <= cnt)
         {
-            DubinNode target = i == cnt ? goalNode : randomNode();
+            DubinNode target = nodes.Count == cnt ? goalNode : randomNode();
             var cheapest = findCheapestPoint(nodes, target);
             var cheapestNode = cheapest.first;
             var cheapestCost = cheapest.second;
@@ -300,9 +312,9 @@ public class Formationer : Point
         }
 
         var filledPath = GetFilledPath(path);
-        Utils.SaveFilledPath(filledPath);
+        Utils.SaveFilledPath(filledPath , -1);
 
-        Debug.Log("path " + path.Count);
+        Debug.Log("Formation path count " + path.Count);
         Debug.Log("path[cnt] " + path[path.Count - 1].pos.x + " " + path[path.Count - 1].pos.y + " " +
                   path[path.Count - 1].time);
         return filledPath;
@@ -331,13 +343,16 @@ public class Formationer : Point
         kdTree = new KDTree(2);
         DubinUtils.MAX_SPEED = MAX_SPEED;
 
-        goalTheta = Mathf.Atan2(goalVel[1], goalVel[0]);
+        goalTheta = Mathf.Atan2( goalVel[1], goalVel[0]);
         if (goalTheta < -EPS)
             goalTheta += 2F * Mathf.PI;
+        //goalTheta = Mathf.PI / 4;
 
         var t = DateTime.Now;
         path = PlanRrtStar(startPos, startVel, goalPos, goalVel, startTheta, goalTheta);   //float[] stpos, float[] stvel, float [] gopos, float[] govel, float stheta, float gheta
+        Debug.Log("Path: " + path);
 
+        Debug.Log("number of breaks: " + numberofbreaks);
         startTime = Time.time;
         Debug.Log(DateTime.Now - t);
     }

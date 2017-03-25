@@ -1010,10 +1010,10 @@ class Utils
         path.Add(current);
     }
 
-    public static void SaveFilledPath(List<Node> path)
+    public static void SaveFilledPath(List<Node> path, int guard)
     {
         string json = JsonConvert.SerializeObject(path, new Vector2Converter(), new NodeConverter());
-        System.IO.File.WriteAllText(@"output.json", json);
+        System.IO.File.WriteAllText(@"output" + guard+ ".json", json);
     }
 
 
@@ -1077,7 +1077,7 @@ class Utils
             {
                 vertex = startNode.pos;
             }
-            else if (rand < 0.1)
+            else if (rand < 0.15)
             {
                 vertex = goalNode.pos;
             }

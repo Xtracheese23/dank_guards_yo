@@ -256,8 +256,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   point:
   - {fileID: 0}
+  formation: {fileID: 0}
   map: {fileID: 0}
   colors: []
+  formhold: {fileID: 1937396304084776, guid: 5ed11a110d1309e49ac64b95b57c8b41, type: 2}
   ai: {fileID: 1937396304084776, guid: 8a7a8e926c82c4a4ca0008582ce908c2, type: 2}
   mapai: {fileID: 1785505170316712, guid: 9b95125bb66c93440b0534a204ed21fe, type: 2}
   camera: {fileID: 1665364587}
