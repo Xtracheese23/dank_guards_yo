@@ -445,6 +445,7 @@ public class GameManager : MonoBehaviour {
         averagey /= start_positions.Length;
 
         formation = CreateFormation();
+        formation.name = "formation";
         formation.startPos = new float[2] { averagex, averagey };
         avggoalx /= start_positions.Length;
         avggoaly /= start_positions.Length;
@@ -477,9 +478,16 @@ public class GameManager : MonoBehaviour {
             formation.formation.Add(new Vector2(x, y));
         }
 
-        // Power of Cheetah
+        formation.startPos = new float[2] { point[0].startPos[0] - formation.formation[0].x, point[0].startPos[1] - formation.formation[0].y + 0.5F}; //0.5 is to prevent the thing from having it's first goal the same node
 
-        Cheetah.instance.CreateOrLoad(problem, boundaryPolygon, inputPolygon);
+        for (int i = 0; i < numberofGuards; i++)
+        {
+            point[i].firstgoal = new float[2] { formation.startPos[0] + formation.formation[i].x, formation.startPos[1] + formation.formation[i].y };
+        }
+
+            // Power of Cheetah
+
+            Cheetah.instance.CreateOrLoad(problem, boundaryPolygon, inputPolygon);
 
         if (UnityEditor.SceneView.sceneViews.Count > 0)
         {

@@ -75,7 +75,7 @@ MonoBehaviour:
   startTheta: 0
   goalTheta: 0
   task: 5
-  iter: 5000
+  iter: 50
 --- !u!212 &212804517892499540
 SpriteRenderer:
   m_ObjectHideFlags: 1

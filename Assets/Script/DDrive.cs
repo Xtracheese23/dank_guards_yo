@@ -10,6 +10,9 @@ public class DDrive : Point
     public float startTheta;
     public float goalTheta;
     private float[] firstgoal = new float[2] {0,0};
+    public bool initialRush = true;
+    public bool stage2 = false;
+    private Vector2 distfromcenter = new Vector2(0F, 0F);
 
 
     public int task;
@@ -333,25 +336,31 @@ public class DDrive : Point
         var diffx = goalPos[0] - startPos[0];
         var diffy = goalPos[1] - startPos[1];
         Debug.DrawLine(new Vector3(diffx, diffy, 20F), new Vector3(goalPos[0], goalPos[1], 20F));
-        
 
-        firstgoal[0] = goalPos[0] - 36F;
-        firstgoal[1] = goalPos[1] - 36F;
+
+        //firstgoal[0] = goalPos[0] - 36F;
+        //firstgoal[1] = goalPos[1] - 36F;
+        var gObj = GameObject.Find("formation");
+        var firstgoalvel = new float[] { 0.1F, 0.1F };
+        if (gObj)
+        {
+            var stpose = gObj.GetComponent<Formationer>().startPos;
+            var formie = gObj.GetComponent<Formationer>().formation[guardID];
+            firstgoal = new float[2] { stpose[0] + formie.x, stpose[1] + formie.y };
+            firstgoalvel = gObj.GetComponent<Formationer>().startVel;
+        }
+        
 
         Debug.DrawLine(new Vector3(startPos[0], startPos[0], 20F), new Vector3(firstgoal[0], firstgoal[1], 20F));
 
-        Debug.Log("Guard: " + guardID + " firstgoal: " + firstgoal[0]);
+        Debug.Log("Guard: " + guardID + " firstgoal: ( " + firstgoal[0] + ", "+firstgoal[1]+")");
 
-        goalTheta = 0F;
-        var firstgoalvel = new float[] { 0.1F, 0.1F };
+        goalTheta = Mathf.Atan2(firstgoalvel[1], firstgoalvel[0]);
+        if (goalTheta < -EPS)
+            goalTheta += 2F * Mathf.PI;
 
         var t = DateTime.Now;
         path = PlanRrtStar(startPos, startVel, firstgoal, firstgoalvel, startTheta, goalTheta);   //float[] stpos, float[] stvel, float [] gopos, float[] govel, float stheta, float gheta
-
-
-        goalTheta = Mathf.Atan2(goalVel[1], goalVel[0]);
-        if (goalTheta < -EPS)
-            goalTheta += 2F * Mathf.PI;
 
         startTime = Time.time;
         Debug.Log(DateTime.Now - t);
@@ -372,9 +381,12 @@ public class DDrive : Point
     void UpdatePosition()
     {
         float time = totalTime;
-        while (curPos + 1 < path.Count && time > path[curPos + 1].time) curPos++;
+        //while (curPos + 1 < path.Count && time > path[curPos + 1].time) curPos++;
+        curPos++;
         if (curPos >= path.Count)
         {
+            if (stage2) return;
+            InitiateStage2();
             return;
         }
         //        var cur = path[curPos];
@@ -382,7 +394,7 @@ public class DDrive : Point
         //        float dt = time - cur.time;
         //        var input = dynamicPointInput(cur, next);
         //        var pos = path[curPos].pos + dt * cur.vel + 0.5F * input.accel * dt * dt;
-        var pos = path[curPos].pos;
+        var pos = path[curPos].pos + distfromcenter;
         transform.position = new Vector3(pos.x, pos.y, 1);
         if (curPos > 1)
         {
@@ -395,4 +407,20 @@ public class DDrive : Point
 
         }
     }
+
+    void InitiateStage2()
+    {
+        var gObj = GameObject.Find("formation");
+        if (gObj)
+        {
+            totalTime += Time.deltaTime;
+            path = gObj.GetComponent<Formationer>().path;
+            distfromcenter.x = gObj.GetComponent<Formationer>().formation[guardID].x;
+            distfromcenter.y = gObj.GetComponent<Formationer>().formation[guardID].y;
+        }
+        Debug.Log("position: " + transform.rotation + " new path: " + path[0].pos + distfromcenter);
+        curPos = 0;
+        initialRush = false;
+    }
+
 }

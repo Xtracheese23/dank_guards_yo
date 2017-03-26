@@ -6,7 +6,7 @@ using UnityEngine;
 
 public class Point : MonoBehaviour
 {
-    public float[] startPos, goalPos, startVel, goalVel;
+    public float[] startPos, goalPos, startVel, goalVel, firstgoal;
     public float MAX_SPEED, MAX_ACCEL, MAX_OMEGA, MAX_PHI, L_CAR, K_FRICTION;
     public Vector2 vel;
 

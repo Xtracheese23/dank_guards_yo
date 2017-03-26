@@ -40,19 +40,23 @@ public class T5_InfoBoard : MonoBehaviour
             if (gObj)
             {
                 pos[i] = gObj.transform.position;
-                goalpos[i] = gObj.GetComponent<DynamicCar>().goalPos;
+                goalpos[i] = gObj.GetComponent<DDrive>().goalPos;
 
-                if (rushover || !gObj.GetComponent<DynamicCar>().initialRush)
+                if (!gObj.GetComponent<DDrive>().initialRush)
+                    numberFin++;
+
+                if (rushover)
                 {
                     rushover = true;
-                    gObj.GetComponent<DynamicCar>().initialRush = false;
+                    gObj.GetComponent<DDrive>().initialRush = false;
+                    gObj.GetComponent<DDrive>().stage2 = true;
                 }
-                if (gObj.GetComponent<DynamicCar>().finished)
-                    numberFin++;
+               // if (gObj.GetComponent<DDrive>().finished)
+               //     numberFin++;
             }
         }
         if (numberFin >= numberofGuards)
-            finished = true;
+            rushover = true;
         var combij = new int[6][];
         int[] errarray = new int[numberofGuards*numberofGuards];
         //int iter = 0;
