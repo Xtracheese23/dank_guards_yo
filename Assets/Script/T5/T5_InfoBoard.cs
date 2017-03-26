@@ -56,7 +56,11 @@ public class T5_InfoBoard : MonoBehaviour
             }
         }
         if (numberFin >= numberofGuards)
+        {
             rushover = true;
+            Debug.Log("Rushover");
+        }
+            
         var combij = new int[6][];
         int[] errarray = new int[numberofGuards*numberofGuards];
         //int iter = 0;

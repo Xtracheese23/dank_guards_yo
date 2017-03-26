@@ -385,7 +385,8 @@ public class DDrive : Point
         curPos++;
         if (curPos >= path.Count)
         {
-            if (stage2) return;
+            initialRush = false;
+            if (!stage2) return;
             InitiateStage2();
             return;
         }
@@ -420,7 +421,6 @@ public class DDrive : Point
         }
         Debug.Log("position: " + transform.rotation + " new path: " + path[0].pos + distfromcenter);
         curPos = 0;
-        initialRush = false;
     }
 
 }

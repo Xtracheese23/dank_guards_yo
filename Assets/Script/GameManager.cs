@@ -462,7 +462,7 @@ public class GameManager : MonoBehaviour {
         formation.K_FRICTION = input.k_friction;
         formation.polygons = inputPolygon;
 
-        formation.startVel = input.start_vel;
+        formation.startVel = new float[] { 0F, 1F };//input.start_vel;
         formation.goalVel = input.goal_vel;
         formation.boundaryPolygon = boundaryPolygon;
         formation.Kp = Kp;
@@ -478,7 +478,7 @@ public class GameManager : MonoBehaviour {
             formation.formation.Add(new Vector2(x, y));
         }
 
-        formation.startPos = new float[2] { point[0].startPos[0] - formation.formation[0].x, point[0].startPos[1] - formation.formation[0].y + 0.5F}; //0.5 is to prevent the thing from having it's first goal the same node
+        formation.startPos = new float[2] { point[0].startPos[0] - formation.formation[0].x + 0.5F, point[0].startPos[1] - formation.formation[0].y + 0.5F}; //0.5 is to prevent the thing from having it's first goal the same node
 
         for (int i = 0; i < numberofGuards; i++)
         {
