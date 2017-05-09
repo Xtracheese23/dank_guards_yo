@@ -96,8 +96,10 @@ public class StaticGuard : Point {
     }
 
     // Use this for initialization
-    void Start () {
-        transform.position = new Vector3(startPos[0], startPos[1], 1);
+    /*void Start () {
+        transform.position = new Vector3(guardID, guardID, 1);
+        //transform.position = new Vector3(8, 8, 1);
+        //transform.position = new Vector3(startPos[0], startPos[1], 1);
         if (useSaved)
         {
             path = Utils.LoadFilledPath();
@@ -106,7 +108,7 @@ public class StaticGuard : Point {
         var t = DateTime.Now;
         path = Plan();
         Debug.Log("Computation time: " + (DateTime.Now - t));
-    }
+    }*/
 
     // Update is called once per frame
     //	void Update () {
@@ -124,13 +126,8 @@ public class StaticGuard : Point {
     //        transform.position = Vector3.MoveTowards(transform.position, new Vector3(v2.x, v2.y, 1), step);
     //    }
     private float totalTime = 0F;
-    void Update()
-    {
-        if (path != null && path.Count > 0)
-        {
-            totalTime += Time.deltaTime;
-            UpdatePosition();
-        }
+    void Update()   {
+
     }
 
     void UpdatePosition()
